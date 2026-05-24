@@ -1,4 +1,4 @@
-import { useState, useEffect, CSSProperties } from "react";
+import { useState, useEffect, useRef, CSSProperties } from "react";
 
 const sliderCSS = `
   input[type=range] {
@@ -39,8 +39,43 @@ const sliderCSS = `
   }
 `;
 
-function SliderStyles() {
-  return <style>{sliderCSS}</style>;
+function SmoothSlider({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const trackRef = useRef<HTMLDivElement>(null);
+
+  function getValueFromClientX(clientX: number) {
+    const rect = trackRef.current!.getBoundingClientRect();
+    const pct = Math.min(Math.max((clientX - rect.left) / rect.width, 0), 1);
+    const raw = 100 + pct * 400;
+    return Math.round(raw / 10) * 10;
+  }
+
+  function onPointerDown(e: React.PointerEvent) {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    onChange(getValueFromClientX(e.clientX));
+  }
+
+  function onPointerMove(e: React.PointerEvent) {
+    if (e.buttons !== 1) return;
+    onChange(getValueFromClientX(e.clientX));
+  }
+
+  const pct = ((value - 100) / 400) * 100;
+
+  return (
+    <div
+      ref={trackRef}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      style={{ position:"relative", height:36, display:"flex", alignItems:"center", cursor:"pointer", touchAction:"none", userSelect:"none" }}
+    >
+      {/* Track background */}
+      <div style={{ position:"absolute", left:0, right:0, height:6, borderRadius:3, background:"#e0e0e0" }}/>
+      {/* Track fill */}
+      <div style={{ position:"absolute", left:0, width:`${pct}%`, height:6, borderRadius:3, background:BRAND }}/>
+      {/* Thumb */}
+      <div style={{ position:"absolute", left:`calc(${pct}% - 14px)`, width:28, height:28, borderRadius:"50%", background:BRAND, border:"2px solid #fff", boxShadow:"0 1px 4px rgba(0,0,0,0.2)", transition:"left 0.05s" }}/>
+    </div>
+  );
 }
 
 const GOOGLE_CLIENT_ID = "394844552614-sc48keuui9dbajl91p05u441khr4c4oh.apps.googleusercontent.com";
@@ -502,11 +537,7 @@ export default function AllCleanBooking() {
               <span style={{fontSize:13,fontWeight:700}}>Window Cleaning</span>
               <span style={{marginLeft:"auto",fontSize:18,fontWeight:700,color:BRAND}}>${windowPrice}</span>
             </div>
-            <input
-              type="range" min="100" max="500" step="1" value={windowPrice}
-              onChange={e=>setWindowPrice(Math.round(parseInt(e.target.value)/10)*10)}
-              style={{width:"100%",accentColor:BRAND,touchAction:"none",cursor:"pointer",WebkitAppearance:"none"}}
-            />
+            <SmoothSlider value={windowPrice} onChange={setWindowPrice}/>
             <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"#aaa",marginTop:2}}>
               <span>$100</span><span style={{color:BRAND_DARK,fontWeight:600}}>{getPriceBracket(windowPrice).estLabel} est.</span><span>$500</span>
             </div>
@@ -519,11 +550,7 @@ export default function AllCleanBooking() {
               <span style={{fontSize:13,fontWeight:700}}>Pressure Washing</span>
               <span style={{marginLeft:"auto",fontSize:18,fontWeight:700,color:BRAND}}>${pressurePrice}</span>
             </div>
-            <input
-              type="range" min="100" max="500" step="1" value={pressurePrice}
-              onChange={e=>setPressurePrice(Math.round(parseInt(e.target.value)/10)*10)}
-              style={{width:"100%",accentColor:BRAND,touchAction:"none",cursor:"pointer",WebkitAppearance:"none"}}
-            />
+            <SmoothSlider value={pressurePrice} onChange={setPressurePrice}/>
             <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"#aaa",marginTop:2}}>
               <span>$100</span><span style={{color:BRAND_DARK,fontWeight:600}}>{getPriceBracket(pressurePrice).estLabel} est.</span><span>$500</span>
             </div>
@@ -685,7 +712,6 @@ export default function AllCleanBooking() {
 
   return (
     <div style={S.app}>
-      <SliderStyles/>
       <div style={S.header}>
         <h1 style={S.h1}>AllClean Solutions</h1>
         <p style={S.tagline}>Professional home services — book in seconds</p>
