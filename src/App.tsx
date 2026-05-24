@@ -240,18 +240,8 @@ async function pushToGoogleCalendar(booking: BookingData, customer: CustomerData
   if (failed.length > 0) throw new Error(`${failed.length} calendar(s) failed`);
 }
 
-function getCalendarBusy(dateKey: string, mc: number) {
-  const hash=dateKey.split("-").reduce((a,b)=>a+parseInt(b),0);
-  const p=[
-    [{start:"9:00",end:"11:00",slots:1},{start:"14:00",end:"16:00",slots:mc}],
-    [{start:"8:00",end:"10:30",slots:2},{start:"13:00",end:"15:00",slots:1}],
-    [{start:"10:00",end:"12:00",slots:mc},{start:"15:00",end:"17:00",slots:1}],
-    [{start:"9:00",end:"11:30",slots:1}],
-    [{start:"8:00",end:"9:00",slots:mc},{start:"11:00",end:"13:00",slots:1},{start:"14:00",end:"15:30",slots:2}],
-    [],
-    [{start:"10:00",end:"14:00",slots:mc}],
-  ];
-  return p[hash%p.length];
+function getCalendarBusy(_dateKey: string, _mc: number) {
+  return [];
 }
 
 function getSlotsAvail(dateKey: string, mc: number, startMins: number, durMins: number) {
