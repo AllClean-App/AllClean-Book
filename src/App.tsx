@@ -129,7 +129,6 @@ async function pushToGoogleCalendar(booking: BookingData, customer: CustomerData
   await initGapi();
   const token = await getAccessToken();
   (window as any).gapi.client.setToken({ access_token: token });
-
   const pad = (n: number) => String(n).padStart(2,"0");
   const d = booking.date;
   function pt(str: string) {
@@ -138,15 +137,12 @@ async function pushToGoogleCalendar(booking: BookingData, customer: CustomerData
   }
   const {h:sh,m:sm}=pt(booking.time), {h:eh,m:em}=pt(booking.endTime);
   const dateStr=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-
   const subPrices: Record<string,number> = {clean1:150,clean2:250,clean4:500,accc:1000};
   let totalPrice=0;
   if(booking.selected.has("window")) totalPrice+=booking.windowPrice||200;
   if(booking.selected.has("pressure")) totalPrice+=booking.pressurePrice||200;
   [...booking.selected].filter(id=>!["window","pressure"].includes(id)).forEach(id=>{totalPrice+=subPrices[id]||0;});
-
   const serviceNames=[...booking.selected].map(id=>SERVICES[id]?.name).join(", ");
-
   const event = {
     summary: customer.name,
     location: customer.address,
@@ -154,14 +150,10 @@ async function pushToGoogleCalendar(booking: BookingData, customer: CustomerData
     start: { dateTime: `${dateStr}T${pad(sh)}:${pad(sm)}:00`, timeZone: TIMEZONE },
     end:   { dateTime: `${dateStr}T${pad(eh)}:${pad(em)}:00`, timeZone: TIMEZONE },
   };
-
   const calIds = new Set<string>();
   [...booking.selected].forEach(id => { if(CALENDAR_IDS[id]) calIds.add(CALENDAR_IDS[id]); });
-
   const results = await Promise.allSettled(
-    [...calIds].map(calendarId =>
-      (window as any).gapi.client.calendar.events.insert({ calendarId, resource: event })
-    )
+    [...calIds].map(calendarId => (window as any).gapi.client.calendar.events.insert({ calendarId, resource: event }))
   );
   const failed = results.filter((r: any) => r.status === "rejected");
   if (failed.length > 0) throw new Error(`${failed.length} calendar(s) failed`);
@@ -206,22 +198,22 @@ const S: Record<string, CSSProperties> = {
   divider:      { height:1, background:"#e0e0e0", margin:"14px 0" },
   catLabel:     { fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:0.8, color:"#666", marginBottom:8 },
   calNav:       { width:30, height:30, border:"1px solid #e0e0e0", borderRadius:7, background:"#fff", cursor:"pointer", fontSize:15, display:"flex", alignItems:"center", justifyContent:"center" },
-  input:        { width:"100%", border:"1.5px solid #e0e0e0", borderRadius:8, padding:"10px 13px", fontSize:14, color:"#1a1a1a", outline:"none", fontFamily:"inherit", background:"#fff", boxSizing:"border-box" },
   summaryCard:  { background:BRAND_LIGHT, border:`1.5px solid ${BRAND}`, borderRadius:14, padding:14, marginBottom:14 },
   summaryRow:   { display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:8, fontSize:13, gap:8 },
   gcalNote:     { background:"#f0fdf4", border:"1px solid #bbf7d0", borderRadius:8, padding:"11px 13px", marginBottom:14, display:"flex", gap:9, fontSize:12, color:"#166534", lineHeight:1.4 },
   backBtn:      { background:"none", border:"1.5px solid #e0e0e0", color:"#666", borderRadius:14, padding:12, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:"inherit", width:"100%", marginBottom:8 },
+  input:        { width:"100%", border:"1.5px solid #e0e0e0", borderRadius:8, padding:"10px 13px", fontSize:14, color:"#1a1a1a", outline:"none", fontFamily:"inherit", background:"#fff", boxSizing:"border-box" },
 };
 
 const SF = {
-  card:        (sel: boolean, prem: boolean): CSSProperties => ({ border:`2px solid ${sel?(prem?GOLD:BRAND):prem?GOLD:"#e0e0e0"}`, borderRadius:14, padding:13, marginBottom:10, cursor:"pointer", background:sel?(prem?GOLD_LIGHT:BRAND_LIGHT):"#fff", display:"flex", alignItems:"flex-start", gap:12, transition:"all 0.15s" }),
-  svcIcon:     (sel: boolean, prem: boolean): CSSProperties => ({ width:42, height:42, borderRadius:10, flexShrink:0, fontSize:20, display:"flex", alignItems:"center", justifyContent:"center", background:sel?(prem?GOLD:BRAND):prem?GOLD_LIGHT:BRAND_LIGHT }),
-  check:       (sel: boolean, prem: boolean): CSSProperties => ({ width:22, height:22, borderRadius:"50%", flexShrink:0, fontSize:12, display:"flex", alignItems:"center", justifyContent:"center", marginTop:2, border:`2px solid ${sel?(prem?GOLD:BRAND):"#e0e0e0"}`, background:sel?(prem?GOLD:BRAND):"transparent", color:"#fff" }),
-  badge:       (type: string): CSSProperties => ({ fontSize:10, borderRadius:20, padding:"2px 7px", background:type==="blue"?BRAND_LIGHT:type==="gold"?GOLD_LIGHT:"#f5f7fa", color:type==="blue"?BRAND_DARK:type==="gold"?"#92400e":"#666" }),
-  durPill:     (sel: boolean): CSSProperties => ({ border:`1.5px solid ${sel?BRAND:"#e0e0e0"}`, borderRadius:20, padding:"6px 12px", fontSize:12, fontWeight:600, cursor:"pointer", color:sel?"#fff":"#666", background:sel?BRAND:"#fff", marginRight:6, marginBottom:6, display:"inline-block" }),
-  syncBanner:  (syncing: boolean): CSSProperties => ({ background:syncing?"#fefce8":BRAND_LIGHT, border:`1px solid ${syncing?"#fde68a":BRAND}`, borderRadius:8, padding:"10px 12px", marginBottom:14, display:"flex", alignItems:"center", gap:8, fontSize:12 }),
-  timeSlot:    (type: string, sel: boolean): CSSProperties => { const C: Record<string,{bg:string,color:string,border:string}> = {avail:{bg:sel?"#22c55e":"#dcfce7",color:sel?"#fff":"#166534",border:sel?"#16a34a":"#bbf7d0"},partial:{bg:sel?GOLD:"#fef9c3",color:sel?"#fff":"#854d0e",border:sel?"#d97706":"#fde68a"},busy:{bg:"#fee2e2",color:"#ccc",border:"#fecaca"}}; const c=C[type]; return{borderRadius:8,padding:"9px 4px",textAlign:"center",fontSize:12,fontWeight:600,cursor:type==="busy"?"not-allowed":"pointer",background:c.bg,color:c.color,border:`1.5px solid ${c.border}`,transition:"all 0.12s"}; },
-  ctaBtn:      (dis: boolean): CSSProperties => ({ width:"100%", background:dis?"#b0d9f5":BRAND, color:"#fff", border:"none", borderRadius:14, padding:15, fontSize:15, fontWeight:700, cursor:dis?"not-allowed":"pointer", fontFamily:"inherit" }),
+  card:       (sel: boolean, prem: boolean): CSSProperties => ({ border:`2px solid ${sel?(prem?GOLD:BRAND):prem?GOLD:"#e0e0e0"}`, borderRadius:14, padding:13, marginBottom:10, cursor:"pointer", background:sel?(prem?GOLD_LIGHT:BRAND_LIGHT):"#fff", display:"flex", alignItems:"flex-start", gap:12, transition:"all 0.15s" }),
+  svcIcon:    (sel: boolean, prem: boolean): CSSProperties => ({ width:42, height:42, borderRadius:10, flexShrink:0, fontSize:20, display:"flex", alignItems:"center", justifyContent:"center", background:sel?(prem?GOLD:BRAND):prem?GOLD_LIGHT:BRAND_LIGHT }),
+  check:      (sel: boolean, prem: boolean): CSSProperties => ({ width:22, height:22, borderRadius:"50%", flexShrink:0, fontSize:12, display:"flex", alignItems:"center", justifyContent:"center", marginTop:2, border:`2px solid ${sel?(prem?GOLD:BRAND):"#e0e0e0"}`, background:sel?(prem?GOLD:BRAND):"transparent", color:"#fff" }),
+  badge:      (type: string): CSSProperties => ({ fontSize:10, borderRadius:20, padding:"2px 7px", background:type==="blue"?BRAND_LIGHT:type==="gold"?GOLD_LIGHT:"#f5f7fa", color:type==="blue"?BRAND_DARK:type==="gold"?"#92400e":"#666" }),
+  durPill:    (sel: boolean): CSSProperties => ({ border:`1.5px solid ${sel?BRAND:"#e0e0e0"}`, borderRadius:20, padding:"6px 12px", fontSize:12, fontWeight:600, cursor:"pointer", color:sel?"#fff":"#666", background:sel?BRAND:"#fff", marginRight:6, marginBottom:6, display:"inline-block" }),
+  syncBanner: (syncing: boolean): CSSProperties => ({ background:syncing?"#fefce8":BRAND_LIGHT, border:`1px solid ${syncing?"#fde68a":BRAND}`, borderRadius:8, padding:"10px 12px", marginBottom:14, display:"flex", alignItems:"center", gap:8, fontSize:12 }),
+  timeSlot:   (type: string, sel: boolean): CSSProperties => { const C: Record<string,{bg:string,color:string,border:string}> = {avail:{bg:sel?"#22c55e":"#dcfce7",color:sel?"#fff":"#166534",border:sel?"#16a34a":"#bbf7d0"},partial:{bg:sel?GOLD:"#fef9c3",color:sel?"#fff":"#854d0e",border:sel?"#d97706":"#fde68a"},busy:{bg:"#fee2e2",color:"#ccc",border:"#fecaca"}}; const c=C[type]; return{borderRadius:8,padding:"9px 4px",textAlign:"center",fontSize:12,fontWeight:600,cursor:type==="busy"?"not-allowed":"pointer",background:c.bg,color:c.color,border:`1.5px solid ${c.border}`,transition:"all 0.12s"}; },
+  ctaBtn:     (dis: boolean): CSSProperties => ({ width:"100%", background:dis?"#b0d9f5":BRAND, color:"#fff", border:"none", borderRadius:14, padding:15, fontSize:15, fontWeight:700, cursor:dis?"not-allowed":"pointer", fontFamily:"inherit" }),
 };
 
 function StepIndicator({ current }: { current: number }) {
@@ -326,7 +318,6 @@ function TimeSlots({ dateKey, selected, durationMins, selectedTime, onSelectTime
   }
   return (
     <div>
-
       {!slots.some(x=>x.av>0)
         ?<div style={{textAlign:"center",padding:20,color:"#666",fontSize:13}}>😔 No available slots — please pick another date.</div>
         :<><Group label="Morning" items={morning}/><Group label="Afternoon" items={afternoon}/></>}
@@ -348,38 +339,40 @@ function CustomerForm({ customer, setCustomer, onBack, onNext, step3Ready }: {
     { label:"Service address", key:"address", type:"text",  placeholder:"123 Main St NW, Calgary, AB" },
   ];
   return (
-    <div style={{ padding:"18px 20px" }}>
-      <div style={{ fontSize:15, fontWeight:700, marginBottom:10 }}>Customer details</div>
+    <div style={S.content}>
+      <div style={S.sectionTitle}>Customer details</div>
       {fields.map(f=>(
         <div key={f.key} style={{marginBottom:12}}>
           <label style={{fontSize:11,fontWeight:700,color:"#666",textTransform:"uppercase" as const,letterSpacing:0.5,display:"block",marginBottom:5}}>{f.label}</label>
           <input
-            style={{ width:"100%", border:"1.5px solid #e0e0e0", borderRadius:8, padding:"10px 13px", fontSize:14, color:"#1a1a1a", outline:"none", fontFamily:"inherit", background:"#fff", boxSizing:"border-box" as const }}
+            style={S.input}
             type={f.type}
             placeholder={f.placeholder}
             value={customer[f.key as keyof CustomerData]}
-            onChange={e => setCustomer(p => ({ ...p, [f.key]: e.target.value }))}
+            onChange={e=>setCustomer(p=>({...p,[f.key]:e.target.value}))}
           />
         </div>
       ))}
       <div style={{marginBottom:12}}>
         <label style={{fontSize:11,fontWeight:700,color:"#666",textTransform:"uppercase" as const,letterSpacing:0.5,display:"block",marginBottom:5}}>Notes (optional)</label>
         <textarea
-          style={{ width:"100%", border:"1.5px solid #e0e0e0", borderRadius:8, padding:"10px 13px", fontSize:14, color:"#1a1a1a", outline:"none", fontFamily:"inherit", background:"#fff", boxSizing:"border-box" as const, resize:"vertical" }}
+          style={{...S.input,resize:"vertical"}}
           rows={2}
           placeholder="Gate code, access info, special requests..."
           value={customer.notes}
-          onChange={e => setCustomer(p => ({ ...p, notes: e.target.value }))}
+          onChange={e=>setCustomer(p=>({...p,notes:e.target.value}))}
         />
       </div>
-      <button style={{ background:"none", border:"1.5px solid #e0e0e0", color:"#666", borderRadius:14, padding:12, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:"inherit", width:"100%", marginBottom:8 }} onClick={onBack}>← Back</button>
-      <button style={{ width:"100%", background:step3Ready?"#39BAFF":"#b0d9f5", color:"#fff", border:"none", borderRadius:14, padding:15, fontSize:15, fontWeight:700, cursor:step3Ready?"pointer":"not-allowed", fontFamily:"inherit" }} disabled={!step3Ready} onClick={onNext}>Continue →</button>
+      <button style={S.backBtn} onClick={onBack}>← Back</button>
+      <button style={SF.ctaBtn(!step3Ready)} disabled={!step3Ready} onClick={onNext}>Continue →</button>
     </div>
   );
 }
+
+export default function AllCleanBooking() {
   const [step,setStep]                   = useState(1);
   const [selected,setSelected]           = useState(new Set<string>());
-  const [customPrice,setCustomPrice]     = useState(200);
+  const [customPrice]                    = useState(200);
   const [windowPrice,setWindowPrice]     = useState(200);
   const [pressurePrice,setPressurePrice] = useState(200);
   const [durationMins,setDurationMins]   = useState(60);
@@ -390,7 +383,6 @@ function CustomerForm({ customer, setCustomer, onBack, onNext, step3Ready }: {
   const [endTime,setEndTime]             = useState<string|null>(null);
   const [gcalLoaded,setGcalLoaded]       = useState(false);
   const [customer,setCustomer]           = useState<CustomerData>({name:"",phone:"",email:"",address:"",notes:""});
-  const [confirmed,setConfirmed]         = useState(false);
   const [pushing,setPushing]             = useState(false);
   const [pushError,setPushError]         = useState("");
 
@@ -419,7 +411,7 @@ function CustomerForm({ customer, setCustomer, onBack, onNext, step3Ready }: {
 
   const durations=allDurations(selected,windowPrice,pressurePrice,customPrice);
   const step2Ready=date&&time;
-  const step3Ready=customer.name&&customer.phone&&customer.email&&customer.address;
+  const step3Ready=!!(customer.name&&customer.phone&&customer.email&&customer.address);
 
   async function handleConfirm() {
     setPushing(true); setPushError("");
@@ -428,7 +420,7 @@ function CustomerForm({ customer, setCustomer, onBack, onNext, step3Ready }: {
         {selected,date:date!,time:time!,endTime:endTime!,durationMins,customPrice,windowPrice,pressurePrice},
         customer
       );
-      setConfirmed(true); setStep(5);
+      setStep(5);
     } catch(err) {
       console.error(err);
       setPushError("Could not push to Google Calendar. Check permissions and try again.");
@@ -436,9 +428,9 @@ function CustomerForm({ customer, setCustomer, onBack, onNext, step3Ready }: {
   }
 
   function resetAll(){
-    setStep(1);setSelected(new Set());setCustomPrice(200);setWindowPrice(200);setPressurePrice(200);
+    setStep(1);setSelected(new Set());setWindowPrice(200);setPressurePrice(200);
     setDurationMins(60);setDate(null);setDateKey("");setTime(null);setEndTime(null);
-    setCustomer({name:"",phone:"",email:"",address:"",notes:""});setConfirmed(false);setPushError("");
+    setCustomer({name:"",phone:"",email:"",address:"",notes:""});setPushError("");
   }
 
   function Step1(){
@@ -548,8 +540,6 @@ function CustomerForm({ customer, setCustomer, onBack, onNext, step3Ready }: {
     );
   }
 
-
-
   function Step4(){
     const names=[...selected].map(id=>SERVICES[id]?.name).join(", ");
     const hasWindow=selected.has("window"),hasPressure=selected.has("pressure");
@@ -559,7 +549,6 @@ function CustomerForm({ customer, setCustomer, onBack, onNext, step3Ready }: {
     if(hasWindow) totalPrice+=windowPrice;
     if(hasPressure) totalPrice+=pressurePrice;
     [...selected].filter(id=>!["window","pressure"].includes(id)).forEach(id=>{totalPrice+=subPrices[id]||0;});
-
     const selectedDurLabel=(()=>{
       if(hasWindow&&hasPressure){
         const wMax=Math.max(...wBracket.durations),pMax=Math.max(...pBracket.durations);
@@ -567,7 +556,6 @@ function CustomerForm({ customer, setCustomer, onBack, onNext, step3Ready }: {
       }
       return fmtDur(durationMins);
     })();
-
     const calendarsList=(()=>{
       const ids=new Set<string>();
       [...selected].forEach(id=>{
@@ -577,7 +565,6 @@ function CustomerForm({ customer, setCustomer, onBack, onNext, step3Ready }: {
       });
       return [...ids].join(", ");
     })();
-
     const rows: [string,string][]=[
       ["Services",names],
       ...(hasWindow&&hasPressure?[["Home values",`🪟 $${windowPrice} · 💦 $${pressurePrice}`] as [string,string]]:hasWindow?[["Home value",`$${windowPrice} (${wBracket.label})`] as [string,string]]:hasPressure?[["Home value",`$${pressurePrice} (${pBracket.label})`] as [string,string]]:[]),
@@ -591,7 +578,6 @@ function CustomerForm({ customer, setCustomer, onBack, onNext, step3Ready }: {
       ["Total price",`$${totalPrice.toLocaleString()}`],
       ["Pushing to",calendarsList],
     ];
-
     return (
       <div style={S.content}>
         <div style={S.sectionTitle}>Confirm booking</div>
@@ -652,7 +638,7 @@ function CustomerForm({ customer, setCustomer, onBack, onNext, step3Ready }: {
       {step<5&&<StepIndicator current={step}/>}
       {step===1&&<Step1/>}
       {step===2&&<Step2/>}
-  {step===3&&<CustomerForm customer={customer} setCustomer={setCustomer} onBack={()=>setStep(2)} onNext={()=>setStep(4)} step3Ready={!!step3Ready}/>}
+      {step===3&&<CustomerForm customer={customer} setCustomer={setCustomer} onBack={()=>setStep(2)} onNext={()=>setStep(4)} step3Ready={step3Ready}/>}
       {step===4&&<Step4/>}
       {step===5&&<Success/>}
     </div>
