@@ -1,5 +1,48 @@
 import { useState, useEffect, CSSProperties } from "react";
 
+const sliderCSS = `
+  input[type=range] {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    border-radius: 3px;
+    background: #e0e0e0;
+    outline: none;
+    padding: 0;
+    margin: 6px 0;
+    touch-action: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #39BAFF;
+    cursor: grab;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+    transition: background 0.15s;
+  }
+  input[type=range]::-webkit-slider-thumb:active {
+    cursor: grabbing;
+    background: #1a9fe0;
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #39BAFF;
+    cursor: grab;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+  }
+`;
+
+function SliderStyles() {
+  return <style>{sliderCSS}</style>;
+}
+
 const GOOGLE_CLIENT_ID = "394844552614-sc48keuui9dbajl91p05u441khr4c4oh.apps.googleusercontent.com";
 
 const CALENDAR_IDS: Record<string, string> = {
@@ -460,9 +503,9 @@ export default function AllCleanBooking() {
               <span style={{marginLeft:"auto",fontSize:18,fontWeight:700,color:BRAND}}>${windowPrice}</span>
             </div>
             <input
-              type="range" min="100" max="500" step="1" value={windowPrice}
+              type="range" min="100" max="500" step="10" value={windowPrice}
               onChange={e=>setWindowPrice(parseInt(e.target.value))}
-              style={{width:"100%",accentColor:BRAND,touchAction:"none",cursor:"pointer"}}
+              style={{width:"100%",accentColor:BRAND,touchAction:"none",cursor:"pointer",WebkitAppearance:"none"}}
             />
             <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"#aaa",marginTop:2}}>
               <span>$100</span><span style={{color:BRAND_DARK,fontWeight:600}}>{getPriceBracket(windowPrice).estLabel} est.</span><span>$500</span>
@@ -477,9 +520,9 @@ export default function AllCleanBooking() {
               <span style={{marginLeft:"auto",fontSize:18,fontWeight:700,color:BRAND}}>${pressurePrice}</span>
             </div>
             <input
-              type="range" min="100" max="500" step="1" value={pressurePrice}
+              type="range" min="100" max="500" step="10" value={pressurePrice}
               onChange={e=>setPressurePrice(parseInt(e.target.value))}
-              style={{width:"100%",accentColor:BRAND,touchAction:"none",cursor:"pointer"}}
+              style={{width:"100%",accentColor:BRAND,touchAction:"none",cursor:"pointer",WebkitAppearance:"none"}}
             />
             <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"#aaa",marginTop:2}}>
               <span>$100</span><span style={{color:BRAND_DARK,fontWeight:600}}>{getPriceBracket(pressurePrice).estLabel} est.</span><span>$500</span>
@@ -642,6 +685,7 @@ export default function AllCleanBooking() {
 
   return (
     <div style={S.app}>
+      <SliderStyles/>
       <div style={S.header}>
         <h1 style={S.h1}>AllClean Solutions</h1>
         <p style={S.tagline}>Professional home services — book in seconds</p>
