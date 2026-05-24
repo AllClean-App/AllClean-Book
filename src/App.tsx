@@ -334,7 +334,49 @@ function TimeSlots({ dateKey, selected, durationMins, selectedTime, onSelectTime
   );
 }
 
-export default function AllCleanBooking() {
+function CustomerForm({ customer, setCustomer, onBack, onNext, step3Ready }: {
+  customer: CustomerData;
+  setCustomer: React.Dispatch<React.SetStateAction<CustomerData>>;
+  onBack: () => void;
+  onNext: () => void;
+  step3Ready: boolean;
+}) {
+  const fields = [
+    { label:"Full name",       key:"name",    type:"text",  placeholder:"Jane Smith" },
+    { label:"Phone number",    key:"phone",   type:"tel",   placeholder:"(403) 555-0100" },
+    { label:"Email address",   key:"email",   type:"email", placeholder:"jane@email.com" },
+    { label:"Service address", key:"address", type:"text",  placeholder:"123 Main St NW, Calgary, AB" },
+  ];
+  return (
+    <div style={{ padding:"18px 20px" }}>
+      <div style={{ fontSize:15, fontWeight:700, marginBottom:10 }}>Customer details</div>
+      {fields.map(f=>(
+        <div key={f.key} style={{marginBottom:12}}>
+          <label style={{fontSize:11,fontWeight:700,color:"#666",textTransform:"uppercase" as const,letterSpacing:0.5,display:"block",marginBottom:5}}>{f.label}</label>
+          <input
+            style={{ width:"100%", border:"1.5px solid #e0e0e0", borderRadius:8, padding:"10px 13px", fontSize:14, color:"#1a1a1a", outline:"none", fontFamily:"inherit", background:"#fff", boxSizing:"border-box" as const }}
+            type={f.type}
+            placeholder={f.placeholder}
+            value={customer[f.key as keyof CustomerData]}
+            onChange={e => setCustomer(p => ({ ...p, [f.key]: e.target.value }))}
+          />
+        </div>
+      ))}
+      <div style={{marginBottom:12}}>
+        <label style={{fontSize:11,fontWeight:700,color:"#666",textTransform:"uppercase" as const,letterSpacing:0.5,display:"block",marginBottom:5}}>Notes (optional)</label>
+        <textarea
+          style={{ width:"100%", border:"1.5px solid #e0e0e0", borderRadius:8, padding:"10px 13px", fontSize:14, color:"#1a1a1a", outline:"none", fontFamily:"inherit", background:"#fff", boxSizing:"border-box" as const, resize:"vertical" }}
+          rows={2}
+          placeholder="Gate code, access info, special requests..."
+          value={customer.notes}
+          onChange={e => setCustomer(p => ({ ...p, notes: e.target.value }))}
+        />
+      </div>
+      <button style={{ background:"none", border:"1.5px solid #e0e0e0", color:"#666", borderRadius:14, padding:12, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:"inherit", width:"100%", marginBottom:8 }} onClick={onBack}>← Back</button>
+      <button style={{ width:"100%", background:step3Ready?"#39BAFF":"#b0d9f5", color:"#fff", border:"none", borderRadius:14, padding:15, fontSize:15, fontWeight:700, cursor:step3Ready?"pointer":"not-allowed", fontFamily:"inherit" }} disabled={!step3Ready} onClick={onNext}>Continue →</button>
+    </div>
+  );
+}
   const [step,setStep]                   = useState(1);
   const [selected,setSelected]           = useState(new Set<string>());
   const [customPrice,setCustomPrice]     = useState(200);
@@ -506,31 +548,7 @@ export default function AllCleanBooking() {
     );
   }
 
-  function Step3(){
-    const fields=[
-      {label:"Full name",key:"name",type:"text",placeholder:"Jane Smith"},
-      {label:"Phone number",key:"phone",type:"tel",placeholder:"(403) 555-0100"},
-      {label:"Email address",key:"email",type:"email",placeholder:"jane@email.com"},
-      {label:"Service address",key:"address",type:"text",placeholder:"123 Main St NW, Calgary, AB"},
-    ];
-    return (
-      <div style={S.content}>
-        <div style={S.sectionTitle}>Customer details</div>
-        {fields.map(f=>(
-          <div key={f.key} style={{marginBottom:12}}>
-            <label style={{fontSize:11,fontWeight:700,color:"#666",textTransform:"uppercase",letterSpacing:0.5,display:"block",marginBottom:5}}>{f.label}</label>
-            <input style={S.input} type={f.type} placeholder={f.placeholder} value={customer[f.key as keyof CustomerData]} onChange={e=>setCustomer(p=>({...p,[f.key]:e.target.value}))}/>
-          </div>
-        ))}
-        <div style={{marginBottom:12}}>
-          <label style={{fontSize:11,fontWeight:700,color:"#666",textTransform:"uppercase",letterSpacing:0.5,display:"block",marginBottom:5}}>Notes (optional)</label>
-          <textarea style={{...S.input,resize:"vertical"}} rows={2} placeholder="Gate code, access info, special requests..." value={customer.notes} onChange={e=>setCustomer(p=>({...p,notes:e.target.value}))}/>
-        </div>
-        <button style={S.backBtn} onClick={()=>setStep(2)}>← Back</button>
-        <button style={SF.ctaBtn(!step3Ready)} disabled={!step3Ready} onClick={()=>setStep(4)}>Continue →</button>
-      </div>
-    );
-  }
+
 
   function Step4(){
     const names=[...selected].map(id=>SERVICES[id]?.name).join(", ");
@@ -634,7 +652,7 @@ export default function AllCleanBooking() {
       {step<5&&<StepIndicator current={step}/>}
       {step===1&&<Step1/>}
       {step===2&&<Step2/>}
-      {step===3&&<Step3/>}
+  {step===3&&<CustomerForm customer={customer} setCustomer={setCustomer} onBack={()=>setStep(2)} onNext={()=>setStep(4)} step3Ready={!!step3Ready}/>}
       {step===4&&<Step4/>}
       {step===5&&<Success/>}
     </div>
