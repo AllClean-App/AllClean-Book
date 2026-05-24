@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, CSSProperties } from "react";
 
 // ─── Google API Config ────────────────────────────────────────────────────────
 const GOOGLE_CLIENT_ID = "394844552614-sc48keuui9dbajl91p05u441khr4c4oh.apps.googleusercontent.com";
@@ -197,31 +197,31 @@ function getDayAvail(dateKey,mc,dur) {
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
-const S = {
-  app:         { maxWidth:430, margin:"0 auto", background:"#fff", minHeight:"100vh", fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif", color:"#1a1a1a", border:"2px solid #1a1a1a", borderRadius:16, overflow:"hidden", boxSizing:"border-box" },
-  header:      { background:BRAND, padding:"18px 20px 22px", textAlign:"center" },
-  h1:          { fontSize:18, fontWeight:700, color:"#fff", letterSpacing:1.2, margin:0 },
-  tagline:     { fontSize:12, color:"rgba(255,255,255,0.85)", marginTop:3 },
-  stepsBar:    { display:"flex", padding:"12px 20px", borderBottom:"1px solid #e0e0e0", background:"#fff", position:"sticky", top:0, zIndex:10 },
-  content:     { padding:"18px 20px" },
-  sectionTitle:{ fontSize:15, fontWeight:700, marginBottom:10 },
-  sectionSub:  { fontSize:12, color:"#666", marginBottom:12, marginTop:-6 },
-  divider:     { height:1, background:"#e0e0e0", margin:"14px 0" },
-  catLabel:    { fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:0.8, color:"#666", marginBottom:8 },
-  card:(sel,prem)=>({ border:`2px solid ${sel?(prem?GOLD:BRAND):prem?GOLD:"#e0e0e0"}`, borderRadius:14, padding:13, marginBottom:10, cursor:"pointer", background:sel?(prem?GOLD_LIGHT:BRAND_LIGHT):"#fff", display:"flex", alignItems:"flex-start", gap:12, transition:"all 0.15s" }),
-  svcIcon:(sel,prem)=>({ width:42, height:42, borderRadius:10, flexShrink:0, fontSize:20, display:"flex", alignItems:"center", justifyContent:"center", background:sel?(prem?GOLD:BRAND):prem?GOLD_LIGHT:BRAND_LIGHT }),
-  check:(sel,prem)=>({ width:22, height:22, borderRadius:"50%", flexShrink:0, fontSize:12, display:"flex", alignItems:"center", justifyContent:"center", marginTop:2, border:`2px solid ${sel?(prem?GOLD:BRAND):"#e0e0e0"}`, background:sel?(prem?GOLD:BRAND):"transparent", color:"#fff" }),
-  badge:(type)=>({ fontSize:10, borderRadius:20, padding:"2px 7px", background:type==="blue"?BRAND_LIGHT:type==="gold"?GOLD_LIGHT:"#f5f7fa", color:type==="blue"?BRAND_DARK:type==="gold"?"#92400e":"#666" }),
-  durPill:(sel)=>({ border:`1.5px solid ${sel?BRAND:"#e0e0e0"}`, borderRadius:20, padding:"6px 12px", fontSize:12, fontWeight:600, cursor:"pointer", color:sel?"#fff":"#666", background:sel?BRAND:"#fff", marginRight:6, marginBottom:6, display:"inline-block" }),
-  syncBanner:(syncing)=>({ background:syncing?"#fefce8":BRAND_LIGHT, border:`1px solid ${syncing?"#fde68a":BRAND}`, borderRadius:8, padding:"10px 12px", marginBottom:14, display:"flex", alignItems:"center", gap:8, fontSize:12 }),
-  calNav:      { width:30, height:30, border:"1px solid #e0e0e0", borderRadius:7, background:"#fff", cursor:"pointer", fontSize:15, display:"flex", alignItems:"center", justifyContent:"center" },
-  timeSlot:(type,sel)=>{ const C={avail:{bg:sel?"#22c55e":"#dcfce7",color:sel?"#fff":"#166534",border:sel?"#16a34a":"#bbf7d0"},partial:{bg:sel?GOLD:"#fef9c3",color:sel?"#fff":"#854d0e",border:sel?"#d97706":"#fde68a"},busy:{bg:"#fee2e2",color:"#ccc",border:"#fecaca"}}[type]; return{borderRadius:8,padding:"9px 4px",textAlign:"center",fontSize:12,fontWeight:600,cursor:type==="busy"?"not-allowed":"pointer",background:C.bg,color:C.color,border:`1.5px solid ${C.border}`,transition:"all 0.12s"}; },
-  input:       { width:"100%", border:"1.5px solid #e0e0e0", borderRadius:8, padding:"10px 13px", fontSize:14, color:"#1a1a1a", outline:"none", fontFamily:"inherit", background:"#fff", boxSizing:"border-box" },
-  summaryCard: { background:BRAND_LIGHT, border:`1.5px solid ${BRAND}`, borderRadius:14, padding:14, marginBottom:14 },
-  summaryRow:  { display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:8, fontSize:13, gap:8 },
-  gcalNote:    { background:"#f0fdf4", border:"1px solid #bbf7d0", borderRadius:8, padding:"11px 13px", marginBottom:14, display:"flex", gap:9, fontSize:12, color:"#166534", lineHeight:1.4 },
-  ctaBtn:(dis)=>({ width:"100%", background:dis?"#b0d9f5":BRAND, color:"#fff", border:"none", borderRadius:14, padding:15, fontSize:15, fontWeight:700, cursor:dis?"not-allowed":"pointer", fontFamily:"inherit" }),
-  backBtn:     { background:"none", border:"1.5px solid #e0e0e0", color:"#666", borderRadius:14, padding:12, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:"inherit", width:"100%", marginBottom:8 },
+const S: Record<string, CSSProperties | ((...args: any[]) => CSSProperties)> = {
+  app:         { maxWidth:430, margin:"0 auto", background:"#fff", minHeight:"100vh", fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif", color:"#1a1a1a", border:"2px solid #1a1a1a", borderRadius:16, overflow:"hidden", boxSizing:"border-box" } as CSSProperties,
+  header:      { background:BRAND, padding:"18px 20px 22px", textAlign:"center" } as CSSProperties,
+  h1:          { fontSize:18, fontWeight:700, color:"#fff", letterSpacing:1.2, margin:0 } as CSSProperties,
+  tagline:     { fontSize:12, color:"rgba(255,255,255,0.85)", marginTop:3 } as CSSProperties,
+  stepsBar:    { display:"flex", padding:"12px 20px", borderBottom:"1px solid #e0e0e0", background:"#fff", position:"sticky", top:0, zIndex:10 } as CSSProperties,
+  content:     { padding:"18px 20px" } as CSSProperties,
+  sectionTitle:{ fontSize:15, fontWeight:700, marginBottom:10 } as CSSProperties,
+  sectionSub:  { fontSize:12, color:"#666", marginBottom:12, marginTop:-6 } as CSSProperties,
+  divider:     { height:1, background:"#e0e0e0", margin:"14px 0" } as CSSProperties,
+  catLabel:    { fontSize:10, fontWeight:700, textTransform:"uppercase" as const, letterSpacing:0.8, color:"#666", marginBottom:8 } as CSSProperties,
+  card:(sel: boolean, prem: boolean): CSSProperties=>({ border:`2px solid ${sel?(prem?GOLD:BRAND):prem?GOLD:"#e0e0e0"}`, borderRadius:14, padding:13, marginBottom:10, cursor:"pointer", background:sel?(prem?GOLD_LIGHT:BRAND_LIGHT):"#fff", display:"flex", alignItems:"flex-start", gap:12, transition:"all 0.15s" }),
+  svcIcon:(sel: boolean, prem: boolean): CSSProperties=>({ width:42, height:42, borderRadius:10, flexShrink:0, fontSize:20, display:"flex", alignItems:"center", justifyContent:"center", background:sel?(prem?GOLD:BRAND):prem?GOLD_LIGHT:BRAND_LIGHT }),
+  check:(sel: boolean, prem: boolean): CSSProperties=>({ width:22, height:22, borderRadius:"50%", flexShrink:0, fontSize:12, display:"flex", alignItems:"center", justifyContent:"center", marginTop:2, border:`2px solid ${sel?(prem?GOLD:BRAND):"#e0e0e0"}`, background:sel?(prem?GOLD:BRAND):"transparent", color:"#fff" }),
+  badge:(type: string): CSSProperties=>({ fontSize:10, borderRadius:20, padding:"2px 7px", background:type==="blue"?BRAND_LIGHT:type==="gold"?GOLD_LIGHT:"#f5f7fa", color:type==="blue"?BRAND_DARK:type==="gold"?"#92400e":"#666" }),
+  durPill:(sel: boolean): CSSProperties=>({ border:`1.5px solid ${sel?BRAND:"#e0e0e0"}`, borderRadius:20, padding:"6px 12px", fontSize:12, fontWeight:600, cursor:"pointer", color:sel?"#fff":"#666", background:sel?BRAND:"#fff", marginRight:6, marginBottom:6, display:"inline-block" }),
+  syncBanner:(syncing: boolean): CSSProperties=>({ background:syncing?"#fefce8":BRAND_LIGHT, border:`1px solid ${syncing?"#fde68a":BRAND}`, borderRadius:8, padding:"10px 12px", marginBottom:14, display:"flex", alignItems:"center", gap:8, fontSize:12 }),
+  calNav:      { width:30, height:30, border:"1px solid #e0e0e0", borderRadius:7, background:"#fff", cursor:"pointer", fontSize:15, display:"flex", alignItems:"center", justifyContent:"center" } as CSSProperties,
+  timeSlot:(type: string, sel: boolean): CSSProperties=>{ const C: Record<string,{bg:string,color:string,border:string}> ={avail:{bg:sel?"#22c55e":"#dcfce7",color:sel?"#fff":"#166534",border:sel?"#16a34a":"#bbf7d0"},partial:{bg:sel?GOLD:"#fef9c3",color:sel?"#fff":"#854d0e",border:sel?"#d97706":"#fde68a"},busy:{bg:"#fee2e2",color:"#ccc",border:"#fecaca"}}; const c=C[type]; return{borderRadius:8,padding:"9px 4px",textAlign:"center",fontSize:12,fontWeight:600,cursor:type==="busy"?"not-allowed":"pointer",background:c.bg,color:c.color,border:`1.5px solid ${c.border}`,transition:"all 0.12s"}; },
+  input:       { width:"100%", border:"1.5px solid #e0e0e0", borderRadius:8, padding:"10px 13px", fontSize:14, color:"#1a1a1a", outline:"none", fontFamily:"inherit", background:"#fff", boxSizing:"border-box" } as CSSProperties,
+  summaryCard: { background:BRAND_LIGHT, border:`1.5px solid ${BRAND}`, borderRadius:14, padding:14, marginBottom:14 } as CSSProperties,
+  summaryRow:  { display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:8, fontSize:13, gap:8 } as CSSProperties,
+  gcalNote:    { background:"#f0fdf4", border:"1px solid #bbf7d0", borderRadius:8, padding:"11px 13px", marginBottom:14, display:"flex", gap:9, fontSize:12, color:"#166534", lineHeight:1.4 } as CSSProperties,
+  ctaBtn:(dis: boolean): CSSProperties=>({ width:"100%", background:dis?"#b0d9f5":BRAND, color:"#fff", border:"none", borderRadius:14, padding:15, fontSize:15, fontWeight:700, cursor:dis?"not-allowed":"pointer", fontFamily:"inherit" }),
+  backBtn:     { background:"none", border:"1.5px solid #e0e0e0", color:"#666", borderRadius:14, padding:12, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:"inherit", width:"100%", marginBottom:8 } as CSSProperties,
 };
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
