@@ -156,9 +156,9 @@ async function pushToGoogleCalendar(booking, customer) {
     end:   { dateTime: endDateTime,   timeZone: TIMEZONE },
   };
 
-  // Build unique list of calendar IDs to push to
-  const calIds = new Set([CALENDAR_IDS.main]);
-  [...booking.selected].forEach(id => { if(CALENDAR_IDS[id]) calIds.add(CALENDAR_IDS[id]); });
+  // Build unique list of calendar IDs to push to (service calendars only, no main)
+  const calIds = new Set<string>();
+  [...booking.selected].forEach(id => { if(CALENDAR_IDS[id as keyof typeof CALENDAR_IDS]) calIds.add(CALENDAR_IDS[id as keyof typeof CALENDAR_IDS]); });
 
   const results = await Promise.allSettled(
     [...calIds].map(calendarId =>
@@ -557,7 +557,7 @@ export default function AllCleanBooking() {
     })();
 
     const calendarsList = (() => {
-      const ids = new Set(["Main Calendar"]);
+      const ids = new Set<string>();
       [...selected].forEach(id => {
         if(id==="window") ids.add("Window Cleaning");
         else if(id==="pressure") ids.add("Pressure Washing");
@@ -610,7 +610,7 @@ export default function AllCleanBooking() {
   function Success(){
     const names=[...selected].map(id=>SERVICES[id]?.name).join(", ");
     const calendarsList = (() => {
-      const ids = new Set(["Main Calendar"]);
+      const ids = new Set<string>();
       [...selected].forEach(id => {
         if(id==="window") ids.add("Window Cleaning");
         else if(id==="pressure") ids.add("Pressure Washing");
