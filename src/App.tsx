@@ -253,7 +253,7 @@ function getSlotsAvail(dateKey: string, mc: number, startMins: number, durMins: 
 
 function getDayAvail(dateKey: string, mc: number, dur: number) {
   let anyFree=false, anyPartial=false;
-  for(let s=8*60;s+dur<=18*60;s+=60){const av=getSlotsAvail(dateKey,mc,s,dur);if(av>=mc)anyFree=true;else if(av>0)anyPartial=true;}
+  for(let s=8*60;s<=18*60;s+=60){const av=getSlotsAvail(dateKey,mc,s,dur);if(av>=mc)anyFree=true;else if(av>0)anyPartial=true;}
   return anyFree?"free":anyPartial?"partial":"busy";
 }
 
@@ -370,7 +370,7 @@ function TimeSlots({ dateKey, selected, durationMins, selectedTime, onSelectTime
 }) {
   const mc=maxContractors(selected);
   const slots: {s:number,av:number}[]=[];
-  for(let s=8*60;s+durationMins<=18*60;s+=30){slots.push({s,av:getSlotsAvail(dateKey,mc,s,durationMins)});}
+  for(let s=8*60;s<=18*60;s+=30){slots.push({s,av:getSlotsAvail(dateKey,mc,s,durationMins)});}
   const morning=slots.filter(x=>x.s<12*60),afternoon=slots.filter(x=>x.s>=12*60);
   function Group({label,items}:{label:string,items:{s:number,av:number}[]}){
     if(!items.length)return null;
