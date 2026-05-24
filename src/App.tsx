@@ -318,8 +318,7 @@ function TimeSlots({ dateKey, selected, durationMins, selectedTime, onSelectTime
           {items.map(({s,av})=>{
             const sl=fromMins(s),el=fromMins(s+durationMins);
             const type=av===0?"busy":av<mc?"partial":"avail",isSel=selectedTime===sl;
-            const sub=av===0?"Fully booked":av<mc?`${av} of ${mc} open`:`${mc} slots open`;
-            return (<div key={s} style={SF.timeSlot(type,isSel)} onClick={()=>type!=="busy"&&onSelectTime(sl,el)}>{sl}<div style={{fontSize:9,marginTop:2,opacity:0.8}}>{sub}</div></div>);
+            return (<div key={s} style={SF.timeSlot(type,isSel)} onClick={()=>type!=="busy"&&onSelectTime(sl,el)}>{sl}</div>);
           })}
         </div>
       </div>
