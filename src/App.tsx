@@ -196,7 +196,8 @@ async function getAccessToken(): Promise<string> {
       scope: "https://www.googleapis.com/auth/calendar.events",
       callback: (resp: any) => { if(resp.error) reject(resp); else resolve(resp.access_token); },
     });
-    client.requestAccessToken({ prompt: "consent" });
+    // Use empty prompt so it skips the consent screen if already authorized
+    client.requestAccessToken({ prompt: "" });
   });
 }
 
@@ -456,6 +457,18 @@ export default function AllCleanBooking() {
   const [customer,setCustomer]           = useState<CustomerData>({name:"",phone:"",email:"",address:"",notes:""});
   const [pushing,setPushing]             = useState(false);
   const [pushError,setPushError]         = useState("");
+
+  useEffect(()=>{
+    // Pre-load Google scripts on mount so they're ready when user hits confirm
+    loadGapiScript().then(()=>{
+      (window as any).gapi.load("client", ()=>{
+        (window as any).gapi.client.init({
+          discoveryDocs:["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
+        }).then(()=>{ gapiReady=true; });
+      });
+    });
+    loadGsiScript();
+  },[]);
 
   useEffect(()=>{
     if(step===2){setGcalLoaded(false);const t=setTimeout(()=>setGcalLoaded(true),1400);return()=>clearTimeout(t);}
