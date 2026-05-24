@@ -197,31 +197,34 @@ function getDayAvail(dateKey,mc,dur) {
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
-const S: Record<string, CSSProperties | ((...args: any[]) => CSSProperties)> = {
-  app:         { maxWidth:430, margin:"0 auto", background:"#fff", minHeight:"100vh", fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif", color:"#1a1a1a", border:"2px solid #1a1a1a", borderRadius:16, overflow:"hidden", boxSizing:"border-box" } as CSSProperties,
-  header:      { background:BRAND, padding:"18px 20px 22px", textAlign:"center" } as CSSProperties,
-  h1:          { fontSize:18, fontWeight:700, color:"#fff", letterSpacing:1.2, margin:0 } as CSSProperties,
-  tagline:     { fontSize:12, color:"rgba(255,255,255,0.85)", marginTop:3 } as CSSProperties,
-  stepsBar:    { display:"flex", padding:"12px 20px", borderBottom:"1px solid #e0e0e0", background:"#fff", position:"sticky", top:0, zIndex:10 } as CSSProperties,
-  content:     { padding:"18px 20px" } as CSSProperties,
-  sectionTitle:{ fontSize:15, fontWeight:700, marginBottom:10 } as CSSProperties,
-  sectionSub:  { fontSize:12, color:"#666", marginBottom:12, marginTop:-6 } as CSSProperties,
-  divider:     { height:1, background:"#e0e0e0", margin:"14px 0" } as CSSProperties,
-  catLabel:    { fontSize:10, fontWeight:700, textTransform:"uppercase" as const, letterSpacing:0.8, color:"#666", marginBottom:8 } as CSSProperties,
-  card:(sel: boolean, prem: boolean): CSSProperties=>({ border:`2px solid ${sel?(prem?GOLD:BRAND):prem?GOLD:"#e0e0e0"}`, borderRadius:14, padding:13, marginBottom:10, cursor:"pointer", background:sel?(prem?GOLD_LIGHT:BRAND_LIGHT):"#fff", display:"flex", alignItems:"flex-start", gap:12, transition:"all 0.15s" }),
-  svcIcon:(sel: boolean, prem: boolean): CSSProperties=>({ width:42, height:42, borderRadius:10, flexShrink:0, fontSize:20, display:"flex", alignItems:"center", justifyContent:"center", background:sel?(prem?GOLD:BRAND):prem?GOLD_LIGHT:BRAND_LIGHT }),
-  check:(sel: boolean, prem: boolean): CSSProperties=>({ width:22, height:22, borderRadius:"50%", flexShrink:0, fontSize:12, display:"flex", alignItems:"center", justifyContent:"center", marginTop:2, border:`2px solid ${sel?(prem?GOLD:BRAND):"#e0e0e0"}`, background:sel?(prem?GOLD:BRAND):"transparent", color:"#fff" }),
-  badge:(type: string): CSSProperties=>({ fontSize:10, borderRadius:20, padding:"2px 7px", background:type==="blue"?BRAND_LIGHT:type==="gold"?GOLD_LIGHT:"#f5f7fa", color:type==="blue"?BRAND_DARK:type==="gold"?"#92400e":"#666" }),
-  durPill:(sel: boolean): CSSProperties=>({ border:`1.5px solid ${sel?BRAND:"#e0e0e0"}`, borderRadius:20, padding:"6px 12px", fontSize:12, fontWeight:600, cursor:"pointer", color:sel?"#fff":"#666", background:sel?BRAND:"#fff", marginRight:6, marginBottom:6, display:"inline-block" }),
-  syncBanner:(syncing: boolean): CSSProperties=>({ background:syncing?"#fefce8":BRAND_LIGHT, border:`1px solid ${syncing?"#fde68a":BRAND}`, borderRadius:8, padding:"10px 12px", marginBottom:14, display:"flex", alignItems:"center", gap:8, fontSize:12 }),
-  calNav:      { width:30, height:30, border:"1px solid #e0e0e0", borderRadius:7, background:"#fff", cursor:"pointer", fontSize:15, display:"flex", alignItems:"center", justifyContent:"center" } as CSSProperties,
-  timeSlot:(type: string, sel: boolean): CSSProperties=>{ const C: Record<string,{bg:string,color:string,border:string}> ={avail:{bg:sel?"#22c55e":"#dcfce7",color:sel?"#fff":"#166534",border:sel?"#16a34a":"#bbf7d0"},partial:{bg:sel?GOLD:"#fef9c3",color:sel?"#fff":"#854d0e",border:sel?"#d97706":"#fde68a"},busy:{bg:"#fee2e2",color:"#ccc",border:"#fecaca"}}; const c=C[type]; return{borderRadius:8,padding:"9px 4px",textAlign:"center",fontSize:12,fontWeight:600,cursor:type==="busy"?"not-allowed":"pointer",background:c.bg,color:c.color,border:`1.5px solid ${c.border}`,transition:"all 0.12s"}; },
-  input:       { width:"100%", border:"1.5px solid #e0e0e0", borderRadius:8, padding:"10px 13px", fontSize:14, color:"#1a1a1a", outline:"none", fontFamily:"inherit", background:"#fff", boxSizing:"border-box" } as CSSProperties,
-  summaryCard: { background:BRAND_LIGHT, border:`1.5px solid ${BRAND}`, borderRadius:14, padding:14, marginBottom:14 } as CSSProperties,
-  summaryRow:  { display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:8, fontSize:13, gap:8 } as CSSProperties,
-  gcalNote:    { background:"#f0fdf4", border:"1px solid #bbf7d0", borderRadius:8, padding:"11px 13px", marginBottom:14, display:"flex", gap:9, fontSize:12, color:"#166534", lineHeight:1.4 } as CSSProperties,
-  ctaBtn:(dis: boolean): CSSProperties=>({ width:"100%", background:dis?"#b0d9f5":BRAND, color:"#fff", border:"none", borderRadius:14, padding:15, fontSize:15, fontWeight:700, cursor:dis?"not-allowed":"pointer", fontFamily:"inherit" }),
-  backBtn:     { background:"none", border:"1.5px solid #e0e0e0", color:"#666", borderRadius:14, padding:12, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:"inherit", width:"100%", marginBottom:8 } as CSSProperties,
+const S: Record<string, CSSProperties> = {
+  app:         { maxWidth:430, margin:"0 auto", background:"#fff", minHeight:"100vh", fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif", color:"#1a1a1a", border:"2px solid #1a1a1a", borderRadius:16, overflow:"hidden", boxSizing:"border-box" },
+  header:      { background:BRAND, padding:"18px 20px 22px", textAlign:"center" },
+  h1:          { fontSize:18, fontWeight:700, color:"#fff", letterSpacing:1.2, margin:0 },
+  tagline:     { fontSize:12, color:"rgba(255,255,255,0.85)", marginTop:3 },
+  stepsBar:    { display:"flex", padding:"12px 20px", borderBottom:"1px solid #e0e0e0", background:"#fff", position:"sticky", top:0, zIndex:10 },
+  content:     { padding:"18px 20px" },
+  sectionTitle:{ fontSize:15, fontWeight:700, marginBottom:10 },
+  sectionSub:  { fontSize:12, color:"#666", marginBottom:12, marginTop:-6 },
+  divider:     { height:1, background:"#e0e0e0", margin:"14px 0" },
+  catLabel:    { fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:0.8, color:"#666", marginBottom:8 },
+  calNav:      { width:30, height:30, border:"1px solid #e0e0e0", borderRadius:7, background:"#fff", cursor:"pointer", fontSize:15, display:"flex", alignItems:"center", justifyContent:"center" },
+  input:       { width:"100%", border:"1.5px solid #e0e0e0", borderRadius:8, padding:"10px 13px", fontSize:14, color:"#1a1a1a", outline:"none", fontFamily:"inherit", background:"#fff", boxSizing:"border-box" },
+  summaryCard: { background:BRAND_LIGHT, border:`1.5px solid ${BRAND}`, borderRadius:14, padding:14, marginBottom:14 },
+  summaryRow:  { display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:8, fontSize:13, gap:8 },
+  gcalNote:    { background:"#f0fdf4", border:"1px solid #bbf7d0", borderRadius:8, padding:"11px 13px", marginBottom:14, display:"flex", gap:9, fontSize:12, color:"#166534", lineHeight:1.4 },
+  backBtn:     { background:"none", border:"1.5px solid #e0e0e0", color:"#666", borderRadius:14, padding:12, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:"inherit", width:"100%", marginBottom:8 },
+};
+
+const SF = {
+  card:       (sel: boolean, prem: boolean): CSSProperties => ({ border:`2px solid ${sel?(prem?GOLD:BRAND):prem?GOLD:"#e0e0e0"}`, borderRadius:14, padding:13, marginBottom:10, cursor:"pointer", background:sel?(prem?GOLD_LIGHT:BRAND_LIGHT):"#fff", display:"flex", alignItems:"flex-start", gap:12, transition:"all 0.15s" }),
+  svcIcon:    (sel: boolean, prem: boolean): CSSProperties => ({ width:42, height:42, borderRadius:10, flexShrink:0, fontSize:20, display:"flex", alignItems:"center", justifyContent:"center", background:sel?(prem?GOLD:BRAND):prem?GOLD_LIGHT:BRAND_LIGHT }),
+  check:      (sel: boolean, prem: boolean): CSSProperties => ({ width:22, height:22, borderRadius:"50%", flexShrink:0, fontSize:12, display:"flex", alignItems:"center", justifyContent:"center", marginTop:2, border:`2px solid ${sel?(prem?GOLD:BRAND):"#e0e0e0"}`, background:sel?(prem?GOLD:BRAND):"transparent", color:"#fff" }),
+  badge:      (type: string): CSSProperties => ({ fontSize:10, borderRadius:20, padding:"2px 7px", background:type==="blue"?BRAND_LIGHT:type==="gold"?GOLD_LIGHT:"#f5f7fa", color:type==="blue"?BRAND_DARK:type==="gold"?"#92400e":"#666" }),
+  durPill:    (sel: boolean): CSSProperties => ({ border:`1.5px solid ${sel?BRAND:"#e0e0e0"}`, borderRadius:20, padding:"6px 12px", fontSize:12, fontWeight:600, cursor:"pointer", color:sel?"#fff":"#666", background:sel?BRAND:"#fff", marginRight:6, marginBottom:6, display:"inline-block" }),
+  syncBanner: (syncing: boolean): CSSProperties => ({ background:syncing?"#fefce8":BRAND_LIGHT, border:`1px solid ${syncing?"#fde68a":BRAND}`, borderRadius:8, padding:"10px 12px", marginBottom:14, display:"flex", alignItems:"center", gap:8, fontSize:12 }),
+  timeSlot:   (type: string, sel: boolean): CSSProperties => { const C: Record<string,{bg:string,color:string,border:string}> = {avail:{bg:sel?"#22c55e":"#dcfce7",color:sel?"#fff":"#166534",border:sel?"#16a34a":"#bbf7d0"},partial:{bg:sel?GOLD:"#fef9c3",color:sel?"#fff":"#854d0e",border:sel?"#d97706":"#fde68a"},busy:{bg:"#fee2e2",color:"#ccc",border:"#fecaca"}}; const c=C[type]; return{borderRadius:8,padding:"9px 4px",textAlign:"center",fontSize:12,fontWeight:600,cursor:type==="busy"?"not-allowed":"pointer",background:c.bg,color:c.color,border:`1.5px solid ${c.border}`,transition:"all 0.12s"}; },
+  ctaBtn:     (dis: boolean): CSSProperties => ({ width:"100%", background:dis?"#b0d9f5":BRAND, color:"#fff", border:"none", borderRadius:14, padding:15, fontSize:15, fontWeight:700, cursor:dis?"not-allowed":"pointer", fontFamily:"inherit" }),
 };
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -248,19 +251,19 @@ function StepIndicator({ current }) {
 function ServiceCard({ id, selected, onToggle }) {
   const svc=SERVICES[id], isPrem=svc.category==="premium", isOneTime=svc.category==="one-time";
   return (
-    <div style={S.card(selected,isPrem)} onClick={()=>onToggle(id)}>
-      <div style={S.svcIcon(selected,isPrem)}>{svc.icon}</div>
+    <div style={SF.card(selected,isPrem)} onClick={()=>onToggle(id)}>
+      <div style={SF.svcIcon(selected,isPrem)}>{svc.icon}</div>
       <div style={{flex:1,minWidth:0}}>
         <div style={{fontWeight:700,fontSize:14}}>{svc.name}</div>
         <div style={{fontSize:11,color:"#666",marginTop:2,lineHeight:1.4}}>{svc.desc}</div>
         <div style={{display:"flex",gap:6,marginTop:5,flexWrap:"wrap",justifyContent:"center"}}>
-          {svc.price&&<span style={S.badge(isPrem?"gold":"blue")}>{svc.price}</span>}
-          {isOneTime&&<span style={S.badge("gray")}>{svc.durRange}</span>}
-          {!isOneTime&&!isPrem&&<span style={S.badge("gray")}>2 hrs/visit</span>}
-          {isPrem&&<span style={S.badge("gray")}>Dedicated team</span>}
+          {svc.price&&<span style={SF.badge(isPrem?"gold":"blue")}>{svc.price}</span>}
+          {isOneTime&&<span style={SF.badge("gray")}>{svc.durRange}</span>}
+          {!isOneTime&&!isPrem&&<span style={SF.badge("gray")}>2 hrs/visit</span>}
+          {isPrem&&<span style={SF.badge("gray")}>Dedicated team</span>}
         </div>
       </div>
-      <div style={S.check(selected,isPrem)}>{selected?"✓":""}</div>
+      <div style={SF.check(selected,isPrem)}>{selected?"✓":""}</div>
     </div>
   );
 }
@@ -271,7 +274,7 @@ function CalendarPicker({ selected, durationMins, selectedDate, onSelectDate, gc
   const mc=maxContractors(selected);
   const y=calDate.getFullYear(),m=calDate.getMonth();
   const firstDay=new Date(y,m,1).getDay(),lastDay=new Date(y,m+1,0).getDate();
-  function dotColor(dk){if(!gcalLoaded)return null;const av=getDayAvail(dk,mc,durationMins);return av==="free"?"#22c55e":av==="partial"?GOLD:"#ef4444";}
+  function dotColor(dk: string){if(!gcalLoaded)return null;const av=getDayAvail(dk,mc,durationMins);return av==="free"?"#22c55e":av==="partial"?GOLD:"#ef4444";}
   return (
     <div style={{border:"1px solid #e0e0e0",borderRadius:14,overflow:"hidden",marginBottom:14}}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 14px",borderBottom:"1px solid #e0e0e0"}}>
@@ -314,7 +317,7 @@ function TimeSlots({ dateKey, selected, durationMins, selectedTime, onSelectTime
             const sl=fromMins(s),el=fromMins(s+durationMins);
             const type=av===0?"busy":av<mc?"partial":"avail",isSel=selectedTime===sl;
             const sub=av===0?"Fully booked":av<mc?`${av} of ${mc} open`:`${mc} slots open`;
-            return (<div key={s} style={S.timeSlot(type,isSel)} onClick={()=>type!=="busy"&&onSelectTime(sl,el)}>{sl}<div style={{fontSize:9,marginTop:2,opacity:0.8}}>{sub}</div></div>);
+            return (<div key={s} style={SF.timeSlot(type,isSel)} onClick={()=>type!=="busy"&&onSelectTime(sl,el)}>{sl}<div style={{fontSize:9,marginTop:2,opacity:0.8}}>{sub}</div></div>);
           })}
         </div>
       </div>
@@ -463,7 +466,7 @@ export default function AllCleanBooking() {
           </div>
         </div>
         {selected.size>0&&<div style={{fontSize:12,color:BRAND,fontWeight:600,marginBottom:10}}>{selected.size} service{selected.size>1?"s":""} selected</div>}
-        <button style={S.ctaBtn(selected.size===0)} disabled={selected.size===0} onClick={()=>setStep(2)}>Continue →</button>
+        <button style={SF.ctaBtn(selected.size===0)} disabled={selected.size===0} onClick={()=>setStep(2)}>Continue →</button>
       </div>
     );
   }
@@ -471,7 +474,7 @@ export default function AllCleanBooking() {
   function Step2(){
     return (
       <div style={S.content}>
-        <div style={S.syncBanner(!gcalLoaded)}>
+        <div style={SF.syncBanner(!gcalLoaded)}>
           <div style={{width:8,height:8,borderRadius:"50%",background:gcalLoaded?"#22c55e":BRAND,flexShrink:0}}/>
           <span>{gcalLoaded?"Google Calendar synced — availability is live":"Syncing with Google Calendar…"}</span>
         </div>
@@ -485,7 +488,7 @@ export default function AllCleanBooking() {
         </div>
         <div style={{marginBottom:14,display:"flex",flexWrap:"wrap",justifyContent:"center",gap:6}}>
           {durations.length>0
-            ?durations.map(d=><span key={d} style={S.durPill(durationMins===d)} onClick={()=>{setDurationMins(d);setTime(null);setEndTime(null);}}>{fmtDur(d)}</span>)
+            ?durations.map(d=><span key={d} style={SF.durPill(durationMins===d)} onClick={()=>{setDurationMins(d);setTime(null);setEndTime(null);}}>{fmtDur(d)}</span>)
             :<div style={{fontSize:12,color:"#888"}}>Select services on step 1 to see duration options.</div>}
         </div>
         <div style={{...S.sectionTitle,marginBottom:8}}>Select a date</div>
@@ -504,7 +507,7 @@ export default function AllCleanBooking() {
           </>
         )}
         <button style={S.backBtn} onClick={()=>setStep(1)}>← Back</button>
-        <button style={S.ctaBtn(!step2Ready)} disabled={!step2Ready} onClick={()=>setStep(3)}>Continue →</button>
+        <button style={SF.ctaBtn(!step2Ready)} disabled={!step2Ready} onClick={()=>setStep(3)}>Continue →</button>
       </div>
     );
   }
@@ -530,7 +533,7 @@ export default function AllCleanBooking() {
           <textarea style={{...S.input,resize:"vertical"}} rows={2} placeholder="Gate code, access info, special requests..." value={customer.notes} onChange={e=>setCustomer(p=>({...p,notes:e.target.value}))}/>
         </div>
         <button style={S.backBtn} onClick={()=>setStep(2)}>← Back</button>
-        <button style={S.ctaBtn(!step3Ready)} disabled={!step3Ready} onClick={()=>setStep(4)}>Continue →</button>
+        <button style={SF.ctaBtn(!step3Ready)} disabled={!step3Ready} onClick={()=>setStep(4)}>Continue →</button>
       </div>
     );
   }
@@ -597,7 +600,7 @@ export default function AllCleanBooking() {
           <span>Confirming will sign you in to Google and push this booking directly to your AllClean calendars.</span>
         </div>
         <button style={S.backBtn} onClick={()=>setStep(3)}>← Back</button>
-        <button style={S.ctaBtn(pushing)} disabled={pushing} onClick={handleConfirm}>
+        <button style={SF.ctaBtn(pushing)} disabled={pushing} onClick={handleConfirm}>
           {pushing?"Pushing to Google Calendar…":"✓ Confirm & Push to Google Calendar"}
         </button>
       </div>
