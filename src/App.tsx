@@ -503,8 +503,8 @@ export default function AllCleanBooking() {
               <span style={{marginLeft:"auto",fontSize:18,fontWeight:700,color:BRAND}}>${windowPrice}</span>
             </div>
             <input
-              type="range" min="100" max="500" step="10" value={windowPrice}
-              onChange={e=>setWindowPrice(parseInt(e.target.value))}
+              type="range" min="100" max="500" step="1" value={windowPrice}
+              onChange={e=>setWindowPrice(Math.round(parseInt(e.target.value)/10)*10)}
               style={{width:"100%",accentColor:BRAND,touchAction:"none",cursor:"pointer",WebkitAppearance:"none"}}
             />
             <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"#aaa",marginTop:2}}>
@@ -520,8 +520,8 @@ export default function AllCleanBooking() {
               <span style={{marginLeft:"auto",fontSize:18,fontWeight:700,color:BRAND}}>${pressurePrice}</span>
             </div>
             <input
-              type="range" min="100" max="500" step="10" value={pressurePrice}
-              onChange={e=>setPressurePrice(parseInt(e.target.value))}
+              type="range" min="100" max="500" step="1" value={pressurePrice}
+              onChange={e=>setPressurePrice(Math.round(parseInt(e.target.value)/10)*10)}
               style={{width:"100%",accentColor:BRAND,touchAction:"none",cursor:"pointer",WebkitAppearance:"none"}}
             />
             <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"#aaa",marginTop:2}}>
