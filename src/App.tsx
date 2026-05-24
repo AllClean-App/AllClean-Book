@@ -19,11 +19,14 @@ const GOLD = "#f59e0b";
 const GOLD_LIGHT = "#fef9c3";
 
 const PRICE_DURATION_MAP = [
-  { min: 100, max: 150, label: "$100–$150", durations: [30],                          estLabel: "~30 min" },
-  { min: 150, max: 200, label: "$150–$200", durations: [30, 60],                      estLabel: "30 min – 1 hr" },
-  { min: 200, max: 250, label: "$200–$250", durations: [60, 90],                      estLabel: "1 – 1.5 hrs" },
-  { min: 250, max: 300, label: "$250–$300", durations: [90, 120],                     estLabel: "1.5 – 2 hrs" },
-  { min: 300, max: 501, label: "$300+",     durations: [120,150,180,210,240,270,300], estLabel: "2 – 5 hrs" },
+  { min: 100, max: 150, label: "$100–$150", durations: [30],                 estLabel: "~30 min" },
+  { min: 150, max: 200, label: "$150–$200", durations: [30, 60],             estLabel: "30 min – 1 hr" },
+  { min: 200, max: 250, label: "$200–$250", durations: [60, 90],             estLabel: "1 – 1.5 hrs" },
+  { min: 250, max: 300, label: "$250–$300", durations: [90, 120],            estLabel: "1.5 – 2 hrs" },
+  { min: 300, max: 350, label: "$300–$350", durations: [120, 150],           estLabel: "2 – 2.5 hrs" },
+  { min: 350, max: 400, label: "$350–$400", durations: [150, 180],           estLabel: "2.5 – 3 hrs" },
+  { min: 400, max: 450, label: "$400–$450", durations: [180, 210],           estLabel: "3 – 3.5 hrs" },
+  { min: 450, max: 501, label: "$450–$500", durations: [210, 240],           estLabel: "3.5 – 4 hrs" },
 ];
 
 function getPriceBracket(price: number) {
@@ -456,7 +459,11 @@ export default function AllCleanBooking() {
               <span style={{fontSize:13,fontWeight:700}}>Window Cleaning</span>
               <span style={{marginLeft:"auto",fontSize:18,fontWeight:700,color:BRAND}}>${windowPrice}</span>
             </div>
-            <input type="range" min="100" max="500" step="10" value={windowPrice} onChange={e=>setWindowPrice(parseInt(e.target.value))} style={{width:"100%",accentColor:BRAND}}/>
+            <input
+              type="range" min="100" max="500" step="1" value={windowPrice}
+              onChange={e=>setWindowPrice(parseInt(e.target.value))}
+              style={{width:"100%",accentColor:BRAND,touchAction:"none",cursor:"pointer"}}
+            />
             <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"#aaa",marginTop:2}}>
               <span>$100</span><span style={{color:BRAND_DARK,fontWeight:600}}>{getPriceBracket(windowPrice).estLabel} est.</span><span>$500</span>
             </div>
@@ -469,7 +476,11 @@ export default function AllCleanBooking() {
               <span style={{fontSize:13,fontWeight:700}}>Pressure Washing</span>
               <span style={{marginLeft:"auto",fontSize:18,fontWeight:700,color:BRAND}}>${pressurePrice}</span>
             </div>
-            <input type="range" min="100" max="500" step="10" value={pressurePrice} onChange={e=>setPressurePrice(parseInt(e.target.value))} style={{width:"100%",accentColor:BRAND}}/>
+            <input
+              type="range" min="100" max="500" step="1" value={pressurePrice}
+              onChange={e=>setPressurePrice(parseInt(e.target.value))}
+              style={{width:"100%",accentColor:BRAND,touchAction:"none",cursor:"pointer"}}
+            />
             <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"#aaa",marginTop:2}}>
               <span>$100</span><span style={{color:BRAND_DARK,fontWeight:600}}>{getPriceBracket(pressurePrice).estLabel} est.</span><span>$500</span>
             </div>
