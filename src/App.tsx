@@ -257,48 +257,33 @@ async function pushToGoogleCalendar(booking: BookingData, customer: CustomerData
 // Fetches real events from Google Calendar for the given calendars/date range and
 // buckets them by date (YYYY-MM-DD) with start/end expressed as minutes-from-midnight,
 // so the booking grid can mark real busy times as unavailable.
+//
+// This calls our own serverless function (/api/availability) instead of asking the
+// browser to sign into Google directly — the server holds a stored refresh token, so
+// reps never see a Google sign-in prompt just to view availability (Calendly-style).
 async function fetchBusyEvents(
   calendarIds: string[],
   timeMinISO: string,
   timeMaxISO: string
 ): Promise<Record<string, { start: number; end: number }[]>> {
-  await initGapi();
-  const token = await getAccessToken();
-  (window as any).gapi.client.setToken({ access_token: token });
-
-  const results = await Promise.allSettled(
-    calendarIds.map(calendarId =>
-      (window as any).gapi.client.calendar.events.list({
-        calendarId,
-        timeMin: timeMinISO,
-        timeMax: timeMaxISO,
-        singleEvents: true,
-        maxResults: 2500,
-        timeZone: TIMEZONE,
-      })
-    )
-  );
-
-  const failed = results.filter((r: any) => r.status === "rejected");
-  if (failed.length === results.length) {
-    // Every calendar failed (e.g. auth issue) — surface as an error so the UI can show a retry option.
-    throw new Error("Failed to load Google Calendar availability");
+  const url = `/api/availability?calendarIds=${encodeURIComponent(calendarIds.join(","))}&timeMin=${encodeURIComponent(timeMinISO)}&timeMax=${encodeURIComponent(timeMaxISO)}`;
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`Availability check failed (${res.status})`);
   }
+  const data = await res.json();
+  const items: any[] = data.events || [];
 
   const byDate: Record<string, { start: number; end: number }[]> = {};
-  results.forEach((r: any) => {
-    if (r.status !== "fulfilled") return;
-    const items = r.value.result.items || [];
-    items.forEach((ev: any) => {
-      const s = ev.start?.dateTime, e = ev.end?.dateTime;
-      if (!s || !e) return; // skip all-day events, which have no specific time
-      const sd = new Date(s), ed = new Date(e);
-      const dk = toDateKey(sd);
-      const startMins = sd.getHours() * 60 + sd.getMinutes();
-      const endMins = ed.getHours() * 60 + ed.getMinutes();
-      if (!byDate[dk]) byDate[dk] = [];
-      byDate[dk].push({ start: startMins, end: endMins });
-    });
+  items.forEach((ev: any) => {
+    const s = ev.start?.dateTime, e = ev.end?.dateTime;
+    if (!s || !e) return; // skip all-day events, which have no specific time
+    const sd = new Date(s), ed = new Date(e);
+    const dk = toDateKey(sd);
+    const startMins = sd.getHours() * 60 + sd.getMinutes();
+    const endMins = ed.getHours() * 60 + ed.getMinutes();
+    if (!byDate[dk]) byDate[dk] = [];
+    byDate[dk].push({ start: startMins, end: endMins });
   });
   return byDate;
 }
