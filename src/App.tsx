@@ -290,9 +290,10 @@ async function fetchBusyEvents(
 
 function getSlotsAvail(_dateKey: string, mc: number, startMins: number, durMins: number, busy: { start: number; end: number }[]) {
   const end = startMins + durMins;
-  let occ = 0;
-  for (const b of busy) { if (startMins < b.end && end > b.start) occ++; }
-  return Math.max(0, mc - occ);
+  for (const b of busy) {
+    if (startMins < b.end && end > b.start) return 0; // any overlapping booking = fully unavailable
+  }
+  return mc;
 }
 
 function getDayAvail(dateKey: string, mc: number, dur: number, busy: { start: number; end: number }[]) {
