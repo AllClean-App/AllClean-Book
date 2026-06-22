@@ -39,6 +39,15 @@ const sliderCSS = `
   }
 `;
 
+// Prevents pinch-zoom / double-tap-zoom so the booking flow stays "stagnant" on mobile browsers.
+const noZoomCSS = `
+  html, body {
+    touch-action: manipulation;
+    -webkit-text-size-adjust: 100%;
+    overscroll-behavior: none;
+  }
+`;
+
 function SmoothSlider({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   const trackRef = useRef<HTMLDivElement>(null);
 
@@ -95,6 +104,10 @@ const BRAND_DARK = "#1a9fe0";
 const BRAND_LIGHT = "#e8f7ff";
 const GOLD = "#f59e0b";
 const GOLD_LIGHT = "#fef9c3";
+
+// Booking window: 10:00 AM - 8:00 PM (10-hour span), 30-minute increments.
+const DAY_START_MINS = 10 * 60;
+const DAY_END_MINS = 20 * 60;
 
 const PRICE_DURATION_MAP = [
   { min: 100, max: 150, label: "$100–$150", durations: [30],                 estLabel: "~30 min" },
@@ -205,7 +218,7 @@ interface BookingData {
   selected: Set<string>; date: Date; time: string; endTime: string;
   durationMins: number; customPrice: number; windowPrice: number; pressurePrice: number;
 }
-interface CustomerData { name: string; phone: string; email: string; address: string; notes: string; }
+interface CustomerData { name: string; phone: string; email: string; address: string; salesRep: string; notes: string; }
 
 async function pushToGoogleCalendar(booking: BookingData, customer: CustomerData) {
   await initGapi();
@@ -228,7 +241,7 @@ async function pushToGoogleCalendar(booking: BookingData, customer: CustomerData
   const event = {
     summary: customer.name,
     location: customer.address,
-    description: `Services: ${serviceNames}\n\nDuration: ${fmtDur(booking.durationMins)}\n\nTotal Price: $${totalPrice}\n\nCustomer: ${customer.name}\n\nPhone: ${customer.phone}${customer.notes?"\n\nNotes: "+customer.notes:""}`,
+    description: `Services: ${serviceNames}\n\nDuration: ${fmtDur(booking.durationMins)}\n\nTotal Price: $${totalPrice}\n\nCustomer: ${customer.name}\n\nPhone: ${customer.phone}\n\nSales Rep: ${customer.salesRep}${customer.email?`\n\nEmail: ${customer.email}`:""}${customer.notes?"\n\nNotes: "+customer.notes:""}`,
     start: { dateTime: `${dateStr}T${pad(sh)}:${pad(sm)}:00`, timeZone: TIMEZONE },
     end:   { dateTime: `${dateStr}T${pad(eh)}:${pad(em)}:00`, timeZone: TIMEZONE },
   };
@@ -241,25 +254,73 @@ async function pushToGoogleCalendar(booking: BookingData, customer: CustomerData
   if (failed.length > 0) throw new Error(`${failed.length} calendar(s) failed`);
 }
 
-function getCalendarBusy(_dateKey: string, _mc: number) {
-  return [];
+// Fetches real events from Google Calendar for the given calendars/date range and
+// buckets them by date (YYYY-MM-DD) with start/end expressed as minutes-from-midnight,
+// so the booking grid can mark real busy times as unavailable.
+async function fetchBusyEvents(
+  calendarIds: string[],
+  timeMinISO: string,
+  timeMaxISO: string
+): Promise<Record<string, { start: number; end: number }[]>> {
+  await initGapi();
+  const token = await getAccessToken();
+  (window as any).gapi.client.setToken({ access_token: token });
+
+  const results = await Promise.allSettled(
+    calendarIds.map(calendarId =>
+      (window as any).gapi.client.calendar.events.list({
+        calendarId,
+        timeMin: timeMinISO,
+        timeMax: timeMaxISO,
+        singleEvents: true,
+        maxResults: 2500,
+        timeZone: TIMEZONE,
+      })
+    )
+  );
+
+  const failed = results.filter((r: any) => r.status === "rejected");
+  if (failed.length === results.length) {
+    // Every calendar failed (e.g. auth issue) — surface as an error so the UI can show a retry option.
+    throw new Error("Failed to load Google Calendar availability");
+  }
+
+  const byDate: Record<string, { start: number; end: number }[]> = {};
+  results.forEach((r: any) => {
+    if (r.status !== "fulfilled") return;
+    const items = r.value.result.items || [];
+    items.forEach((ev: any) => {
+      const s = ev.start?.dateTime, e = ev.end?.dateTime;
+      if (!s || !e) return; // skip all-day events, which have no specific time
+      const sd = new Date(s), ed = new Date(e);
+      const dk = toDateKey(sd);
+      const startMins = sd.getHours() * 60 + sd.getMinutes();
+      const endMins = ed.getHours() * 60 + ed.getMinutes();
+      if (!byDate[dk]) byDate[dk] = [];
+      byDate[dk].push({ start: startMins, end: endMins });
+    });
+  });
+  return byDate;
 }
 
-function getSlotsAvail(dateKey: string, mc: number, startMins: number, durMins: number) {
-  const busy=getCalendarBusy(dateKey,mc), end=startMins+durMins;
-  let occ=0;
-  for(const b of busy){const bs=toMins(b.start),be=toMins(b.end);if(startMins<be&&end>bs)occ=Math.max(occ,b.slots);}
-  return Math.max(0,mc-occ);
+function getSlotsAvail(_dateKey: string, mc: number, startMins: number, durMins: number, busy: { start: number; end: number }[]) {
+  const end = startMins + durMins;
+  let occ = 0;
+  for (const b of busy) { if (startMins < b.end && end > b.start) occ++; }
+  return Math.max(0, mc - occ);
 }
 
-function getDayAvail(dateKey: string, mc: number, dur: number) {
+function getDayAvail(dateKey: string, mc: number, dur: number, busy: { start: number; end: number }[]) {
   let anyFree=false, anyPartial=false;
-  for(let s=8*60;s<=18*60;s+=60){const av=getSlotsAvail(dateKey,mc,s,dur);if(av>=mc)anyFree=true;else if(av>0)anyPartial=true;}
+  for(let s=DAY_START_MINS;s<=DAY_END_MINS;s+=60){
+    const av=getSlotsAvail(dateKey,mc,s,dur,busy);
+    if(av>=mc)anyFree=true;else if(av>0)anyPartial=true;
+  }
   return anyFree?"free":anyPartial?"partial":"busy";
 }
 
 const S: Record<string, CSSProperties> = {
-  app:          { maxWidth:430, margin:"0 auto", background:"#fff", minHeight:"100vh", fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif", color:"#1a1a1a", border:"2px solid #1a1a1a", borderRadius:16, overflow:"hidden", boxSizing:"border-box" },
+  app:          { maxWidth:430, margin:"0 auto", background:"#fff", minHeight:"100vh", fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif", color:"#1a1a1a", border:"2px solid #1a1a1a", borderRadius:16, overflow:"hidden", boxSizing:"border-box", touchAction:"manipulation" },
   header:       { background:BRAND, padding:"18px 20px 22px", textAlign:"center" },
   h1:           { fontSize:18, fontWeight:700, color:"#fff", letterSpacing:1.2, margin:0 },
   tagline:      { fontSize:12, color:"rgba(255,255,255,0.85)", marginTop:3 },
@@ -286,6 +347,7 @@ const SF = {
   syncBanner: (syncing: boolean): CSSProperties => ({ background:syncing?"#fefce8":BRAND_LIGHT, border:`1px solid ${syncing?"#fde68a":BRAND}`, borderRadius:8, padding:"10px 12px", marginBottom:14, display:"flex", alignItems:"center", gap:8, fontSize:12 }),
   timeSlot:   (type: string, sel: boolean): CSSProperties => { const C: Record<string,{bg:string,color:string,border:string}> = {avail:{bg:sel?"#22c55e":"#dcfce7",color:sel?"#fff":"#166534",border:sel?"#16a34a":"#bbf7d0"},partial:{bg:sel?GOLD:"#fef9c3",color:sel?"#fff":"#854d0e",border:sel?"#d97706":"#fde68a"},busy:{bg:"#fee2e2",color:"#ccc",border:"#fecaca"}}; const c=C[type]; return{borderRadius:8,padding:"9px 4px",textAlign:"center",fontSize:12,fontWeight:600,cursor:type==="busy"?"not-allowed":"pointer",background:c.bg,color:c.color,border:`1.5px solid ${c.border}`,transition:"all 0.12s"}; },
   ctaBtn:     (dis: boolean): CSSProperties => ({ width:"100%", background:dis?"#b0d9f5":BRAND, color:"#fff", border:"none", borderRadius:14, padding:15, fontSize:15, fontWeight:700, cursor:dis?"not-allowed":"pointer", fontFamily:"inherit" }),
+  retryBtn:   (): CSSProperties => ({ border:"none", background:BRAND, color:"#fff", borderRadius:6, padding:"4px 10px", fontSize:11, fontWeight:700, cursor:"pointer", fontFamily:"inherit", flexShrink:0 }),
 };
 
 function StepIndicator({ current }: { current: number }) {
@@ -328,22 +390,23 @@ function ServiceCard({ id, selected, onToggle }: { id: string; selected: boolean
   );
 }
 
-function CalendarPicker({ selected, durationMins, selectedDate, onSelectDate, gcalLoaded }: {
+function CalendarPicker({ selected, durationMins, selectedDate, onSelectDate, gcalLoaded, busyMap, calDate, onMonthChange }: {
   selected: Set<string>; durationMins: number; selectedDate: Date|null;
   onSelectDate: (dt: Date, dk: string) => void; gcalLoaded: boolean;
+  busyMap: Record<string, { start: number; end: number }[]>;
+  calDate: Date; onMonthChange: (d: Date) => void;
 }) {
-  const [calDate,setCalDate]=useState(()=>{const d=new Date();d.setDate(1);return d;});
   const today=new Date();today.setHours(0,0,0,0);
   const mc=maxContractors(selected);
   const y=calDate.getFullYear(),m=calDate.getMonth();
   const firstDay=new Date(y,m,1).getDay(),lastDay=new Date(y,m+1,0).getDate();
-  function dotColor(dk: string){if(!gcalLoaded)return null;const av=getDayAvail(dk,mc,durationMins);return av==="free"?"#22c55e":av==="partial"?GOLD:"#ef4444";}
+  function dotColor(dk: string){if(!gcalLoaded)return null;const av=getDayAvail(dk,mc,durationMins,busyMap[dk]||[]);return av==="free"?"#22c55e":av==="partial"?GOLD:"#ef4444";}
   return (
     <div style={{border:"1px solid #e0e0e0",borderRadius:14,overflow:"hidden",marginBottom:14}}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 14px",borderBottom:"1px solid #e0e0e0"}}>
-        <button style={S.calNav} onClick={()=>setCalDate(new Date(y,m-1,1))}>‹</button>
+        <button style={S.calNav} onClick={()=>onMonthChange(new Date(y,m-1,1))}>‹</button>
         <span style={{fontWeight:700,fontSize:14}}>{MONTHS[m]} {y}</span>
-        <button style={S.calNav} onClick={()=>setCalDate(new Date(y,m+1,1))}>›</button>
+        <button style={S.calNav} onClick={()=>onMonthChange(new Date(y,m+1,1))}>›</button>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",padding:4,gap:2}}>
         {DAY_LABELS.map(d=><div key={d} style={{textAlign:"center",fontSize:10,fontWeight:700,color:"#666",padding:"6px 0"}}>{d}</div>)}
@@ -365,13 +428,14 @@ function CalendarPicker({ selected, durationMins, selectedDate, onSelectDate, gc
   );
 }
 
-function TimeSlots({ dateKey, selected, durationMins, selectedTime, onSelectTime }: {
+function TimeSlots({ dateKey, selected, durationMins, selectedTime, onSelectTime, busy }: {
   dateKey: string; selected: Set<string>; durationMins: number;
   selectedTime: string|null; onSelectTime: (s: string, e: string) => void;
+  busy: { start: number; end: number }[];
 }) {
   const mc=maxContractors(selected);
   const slots: {s:number,av:number}[]=[];
-  for(let s=8*60;s<=18*60;s+=30){slots.push({s,av:getSlotsAvail(dateKey,mc,s,durationMins)});}
+  for(let s=DAY_START_MINS;s<=DAY_END_MINS;s+=30){slots.push({s,av:getSlotsAvail(dateKey,mc,s,durationMins,busy)});}
   const morning=slots.filter(x=>x.s<12*60),afternoon=slots.filter(x=>x.s>=12*60);
   function Group({label,items}:{label:string,items:{s:number,av:number}[]}){
     if(!items.length)return null;
@@ -405,17 +469,20 @@ function CustomerForm({ customer, setCustomer, onBack, onNext, step3Ready }: {
   step3Ready: boolean;
 }) {
   const fields = [
-    { label:"Full name",       key:"name",    type:"text",  placeholder:"Jane Smith" },
-    { label:"Phone number",    key:"phone",   type:"tel",   placeholder:"(403) 555-0100" },
-    { label:"Email address",   key:"email",   type:"email", placeholder:"jane@email.com" },
-    { label:"Service address", key:"address", type:"text",  placeholder:"123 Main St NW, Calgary, AB" },
+    { label:"Full name",       key:"name",     type:"text",  placeholder:"Jane Smith",                       required:true },
+    { label:"Phone number",    key:"phone",    type:"tel",   placeholder:"(403) 555-0100",                   required:true },
+    { label:"Email address",   key:"email",    type:"email", placeholder:"jane@email.com",                   required:false },
+    { label:"Service address", key:"address",  type:"text",  placeholder:"123 Main St NW, Calgary, AB",      required:true },
+    { label:"Sales rep name",  key:"salesRep", type:"text",  placeholder:"Who booked this lead?",             required:true },
   ];
   return (
     <div style={S.content}>
       <div style={S.sectionTitle}>Customer details</div>
       {fields.map(f=>(
         <div key={f.key} style={{marginBottom:12}}>
-          <label style={{fontSize:11,fontWeight:700,color:"#666",textTransform:"uppercase" as const,letterSpacing:0.5,display:"block",marginBottom:5}}>{f.label}</label>
+          <label style={{fontSize:11,fontWeight:700,color:"#666",textTransform:"uppercase" as const,letterSpacing:0.5,display:"block",marginBottom:5}}>
+            {f.label}{!f.required?" (optional)":""}
+          </label>
           <input
             style={S.input}
             type={f.type}
@@ -453,8 +520,11 @@ export default function AllCleanBooking() {
   const [dateStr,setDateStr]             = useState("");
   const [time,setTime]                   = useState<string|null>(null);
   const [endTime,setEndTime]             = useState<string|null>(null);
+  const [calDate,setCalDate]             = useState(()=>{const d=new Date();d.setDate(1);return d;});
+  const [busyMap,setBusyMap]             = useState<Record<string,{start:number,end:number}[]>>({});
   const [gcalLoaded,setGcalLoaded]       = useState(false);
-  const [customer,setCustomer]           = useState<CustomerData>({name:"",phone:"",email:"",address:"",notes:""});
+  const [gcalError,setGcalError]         = useState("");
+  const [customer,setCustomer]           = useState<CustomerData>({name:"",phone:"",email:"",address:"",salesRep:"",notes:""});
   const [pushing,setPushing]             = useState(false);
   const [pushError,setPushError]         = useState("");
 
@@ -470,9 +540,41 @@ export default function AllCleanBooking() {
     loadGsiScript();
   },[]);
 
+  // Lock the viewport so mobile browsers can't pinch/double-tap zoom the booking flow.
   useEffect(()=>{
-    if(step===2){setGcalLoaded(false);const t=setTimeout(()=>setGcalLoaded(true),1400);return()=>clearTimeout(t);}
-  },[step]);
+    let meta = document.querySelector('meta[name="viewport"]') as HTMLMetaElement | null;
+    if(!meta){
+      meta = document.createElement("meta");
+      meta.setAttribute("name","viewport");
+      document.head.appendChild(meta);
+    }
+    meta.setAttribute("content","width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no");
+  },[]);
+
+  function loadAvailability(){
+    const calIds = new Set<string>();
+    selected.forEach(id=>{ if(CALENDAR_IDS[id]) calIds.add(CALENDAR_IDS[id]); });
+    if(calIds.size===0){ setGcalLoaded(true); setBusyMap({}); setGcalError(""); return; }
+    setGcalLoaded(false);
+    setGcalError("");
+    const y=calDate.getFullYear(), m=calDate.getMonth();
+    const timeMin=new Date(y,m,1).toISOString();
+    const timeMax=new Date(y,m+1,1).toISOString();
+    fetchBusyEvents([...calIds],timeMin,timeMax)
+      .then(map=>{ setBusyMap(map); setGcalLoaded(true); })
+      .catch(err=>{
+        console.error(err);
+        setBusyMap({});
+        setGcalLoaded(true);
+        setGcalError("Couldn't load live availability from Google Calendar — tap Retry.");
+      });
+  }
+
+  useEffect(()=>{
+    if(step!==2) return;
+    loadAvailability();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[step,selected,calDate]);
 
   useEffect(()=>{
     const hasW=selected.has("window"),hasP=selected.has("pressure");
@@ -495,7 +597,7 @@ export default function AllCleanBooking() {
 
   const durations=allDurations(selected,windowPrice,pressurePrice,customPrice);
   const step2Ready=date&&time;
-  const step3Ready=!!(customer.name&&customer.phone&&customer.email&&customer.address);
+  const step3Ready=!!(customer.name&&customer.phone&&customer.address&&customer.salesRep);
 
   async function handleConfirm() {
     setPushing(true); setPushError("");
@@ -514,7 +616,9 @@ export default function AllCleanBooking() {
   function resetAll(){
     setStep(1);setSelected(new Set());setWindowPrice(200);setPressurePrice(200);
     setDurationMins(60);setDate(null);setDateKey("");setTime(null);setEndTime(null);
-    setCustomer({name:"",phone:"",email:"",address:"",notes:""});setPushError("");
+    setCustomer({name:"",phone:"",email:"",address:"",salesRep:"",notes:""});setPushError("");
+    setCalDate(()=>{const d=new Date();d.setDate(1);return d;});
+    setBusyMap({});setGcalError("");setGcalLoaded(false);
   }
 
   function Step1(){
@@ -587,8 +691,11 @@ export default function AllCleanBooking() {
     return (
       <div style={S.content}>
         <div style={SF.syncBanner(!gcalLoaded)}>
-          <div style={{width:8,height:8,borderRadius:"50%",background:gcalLoaded?"#22c55e":BRAND,flexShrink:0}}/>
-          <span>{gcalLoaded?"Google Calendar synced — availability is live":"Syncing with Google Calendar…"}</span>
+          <div style={{width:8,height:8,borderRadius:"50%",background:!gcalLoaded?BRAND:gcalError?"#ef4444":"#22c55e",flexShrink:0}}/>
+          <span style={{flex:1}}>
+            {!gcalLoaded?"Syncing with Google Calendar…":gcalError?gcalError:"Google Calendar synced — availability is live"}
+          </span>
+          {gcalLoaded&&gcalError&&<button style={SF.retryBtn()} onClick={loadAvailability}>Retry</button>}
         </div>
         <div style={{...S.sectionTitle,marginBottom:4}}>Job duration</div>
         <div style={{fontSize:12,color:"#666",marginBottom:8}}>
@@ -611,11 +718,27 @@ export default function AllCleanBooking() {
             </div>
           ))}
         </div>
-        <CalendarPicker selected={selected} durationMins={durationMins} selectedDate={date} onSelectDate={handleSelectDate} gcalLoaded={gcalLoaded}/>
+        <CalendarPicker
+          selected={selected}
+          durationMins={durationMins}
+          selectedDate={date}
+          onSelectDate={handleSelectDate}
+          gcalLoaded={gcalLoaded}
+          busyMap={busyMap}
+          calDate={calDate}
+          onMonthChange={setCalDate}
+        />
         {date&&(
           <>
             <div style={{...S.sectionTitle,marginBottom:6}}>Available times</div>
-            <TimeSlots dateKey={dateKey} selected={selected} durationMins={durationMins} selectedTime={time} onSelectTime={(s,e)=>{setTime(s);setEndTime(e);}}/>
+            <TimeSlots
+              dateKey={dateKey}
+              selected={selected}
+              durationMins={durationMins}
+              selectedTime={time}
+              onSelectTime={(s,e)=>{setTime(s);setEndTime(e);}}
+              busy={busyMap[dateKey]||[]}
+            />
           </>
         )}
         <button style={S.backBtn} onClick={()=>setStep(1)}>← Back</button>
@@ -657,22 +780,25 @@ export default function AllCleanBooking() {
       ["Start",time||""],
       ["End",endTime||""],
       ["Customer",customer.name],
+      ["Sales rep",customer.salesRep],
       ["Address",customer.address],
       ["Phone",customer.phone],
+      ...(customer.email?[["Email",customer.email] as [string,string]]:[]),
       ["Total price",`$${totalPrice.toLocaleString()}`],
       ["Pushing to",calendarsList],
     ];
+    const dividerAfter = new Set(["Selected duration","Date","Sales rep","Total price"]);
     return (
       <div style={S.content}>
         <div style={S.sectionTitle}>Confirm booking</div>
         <div style={S.summaryCard}>
           {rows.map(([label,val],i)=>(
-            <div key={label}>
+            <div key={label+i}>
               <div style={S.summaryRow}>
                 <span style={{color:"#666",flexShrink:0}}>{label}</span>
                 <span style={{fontWeight:600,textAlign:"right",maxWidth:"60%",color:label==="Home values"||label==="Home value"?BRAND:label==="Total price"?"#16a34a":label==="Pushing to"?"#7c3aed":"#1a1a1a",fontSize:label==="Pushing to"?11:13}}>{val}</span>
               </div>
-              {[1,2,5,8].includes(i)&&<div style={{height:1,background:"rgba(57,186,255,0.25)",margin:"8px 0"}}/>}
+              {dividerAfter.has(label)&&<div style={{height:1,background:"rgba(57,186,255,0.25)",margin:"8px 0"}}/>}
             </div>
           ))}
         </div>
@@ -715,6 +841,7 @@ export default function AllCleanBooking() {
 
   return (
     <div style={S.app}>
+      <style>{noZoomCSS}</style>
       <div style={S.header}>
         <h1 style={S.h1}>AllClean Solutions</h1>
         <p style={S.tagline}>Professional home services — book in seconds</p>
