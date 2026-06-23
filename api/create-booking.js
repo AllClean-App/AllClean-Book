@@ -31,7 +31,9 @@ export default async function handler(req, res) {
 
     if (!tokenData.access_token) {
       console.error("Token refresh failed:", tokenData);
-      return res.status(500).json({ error: "Failed to refresh Google access token" });
+      return res.status(500).json({
+        error: `Failed to refresh Google access token: ${tokenData.error_description || tokenData.error || "unknown reason"}`,
+      });
     }
 
     const accessToken = tokenData.access_token;
@@ -59,8 +61,9 @@ export default async function handler(req, res) {
     const failed = results.filter((r) => r.status === "rejected");
     if (failed.length > 0) {
       failed.forEach((f) => console.error("Calendar insert failed:", f.reason));
+      const reasons = failed.map((f) => (f.reason && f.reason.message) ? f.reason.message : String(f.reason));
       return res.status(500).json({
-        error: `${failed.length} of ${calendarIds.length} calendar(s) failed to update`,
+        error: `${failed.length} of ${calendarIds.length} calendar(s) failed: ${reasons.join(" | ")}`,
       });
     }
 
