@@ -248,10 +248,11 @@ async function fetchBusyEvents(
 
 function getSlotsAvail(_dateKey: string, mc: number, startMins: number, durMins: number, busy: { start: number; end: number }[]) {
   const end = startMins + durMins;
+  let occ = 0;
   for (const b of busy) {
-    if (startMins < b.end && end > b.start) return 0; // any overlapping booking = fully unavailable
+    if (startMins < b.end && end > b.start) occ++; // count how many existing bookings overlap this window
   }
-  return mc;
+  return Math.max(0, mc - occ); // still selectable as long as a contractor is free; fully blocked only once all are committed
 }
 
 function getDayAvail(dateKey: string, mc: number, dur: number, busy: { start: number; end: number }[]) {
@@ -289,7 +290,7 @@ const SF = {
   badge:      (type: string): CSSProperties => ({ fontSize:10, borderRadius:20, padding:"2px 7px", background:type==="blue"?BRAND_LIGHT:type==="gold"?GOLD_LIGHT:"#f5f7fa", color:type==="blue"?BRAND_DARK:type==="gold"?"#92400e":"#666" }),
   durPill:    (sel: boolean): CSSProperties => ({ border:`1.5px solid ${sel?BRAND:"#e0e0e0"}`, borderRadius:20, padding:"6px 12px", fontSize:12, fontWeight:600, cursor:"pointer", color:sel?"#fff":"#666", background:sel?BRAND:"#fff", marginRight:6, marginBottom:6, display:"inline-block" }),
   syncBanner: (syncing: boolean): CSSProperties => ({ background:syncing?"#fefce8":BRAND_LIGHT, border:`1px solid ${syncing?"#fde68a":BRAND}`, borderRadius:8, padding:"10px 12px", marginBottom:14, display:"flex", alignItems:"center", gap:8, fontSize:12 }),
-  timeSlot:   (type: string, sel: boolean): CSSProperties => { const C: Record<string,{bg:string,color:string,border:string}> = {avail:{bg:sel?"#22c55e":"#dcfce7",color:sel?"#fff":"#166534",border:sel?"#16a34a":"#bbf7d0"},partial:{bg:sel?GOLD:"#fef9c3",color:sel?"#fff":"#854d0e",border:sel?"#d97706":"#fde68a"},busy:{bg:"#fee2e2",color:"#ccc",border:"#fecaca"}}; const c=C[type]; return{borderRadius:8,padding:"9px 4px",textAlign:"center",fontSize:12,fontWeight:600,cursor:type==="busy"?"not-allowed":"pointer",background:c.bg,color:c.color,border:`1.5px solid ${c.border}`,transition:"all 0.12s"}; },
+  timeSlot:   (type: string, sel: boolean): CSSProperties => { const C: Record<string,{bg:string,color:string,border:string}> = {avail:{bg:sel?"#22c55e":"#dcfce7",color:sel?"#fff":"#166534",border:sel?"#16a34a":"#bbf7d0"},partial:{bg:sel?GOLD:"#fef9c3",color:sel?"#fff":"#854d0e",border:sel?"#d97706":"#fde68a"},busy:{bg:sel?"#ef4444":"#fee2e2",color:sel?"#fff":"#991b1b",border:sel?"#dc2626":"#fecaca"}}; const c=C[type]; return{borderRadius:8,padding:"9px 4px",textAlign:"center",fontSize:12,fontWeight:600,cursor:"pointer",background:c.bg,color:c.color,border:`1.5px solid ${c.border}`,transition:"all 0.12s"}; },
   ctaBtn:     (dis: boolean): CSSProperties => ({ width:"100%", background:dis?"#b0d9f5":BRAND, color:"#fff", border:"none", borderRadius:14, padding:15, fontSize:15, fontWeight:700, cursor:dis?"not-allowed":"pointer", fontFamily:"inherit" }),
   retryBtn:   (): CSSProperties => ({ border:"none", background:BRAND, color:"#fff", borderRadius:6, padding:"4px 10px", fontSize:11, fontWeight:700, cursor:"pointer", fontFamily:"inherit", flexShrink:0 }),
 };
@@ -390,7 +391,7 @@ function TimeSlots({ dateKey, selected, durationMins, selectedTime, onSelectTime
           {items.map(({s,av})=>{
             const sl=fromMins(s),el=fromMins(s+durationMins);
             const type=av===0?"busy":av<mc?"partial":"avail",isSel=selectedTime===sl;
-            return (<div key={s} style={SF.timeSlot(type,isSel)} onClick={()=>type!=="busy"&&onSelectTime(sl,el)}>{sl}</div>);
+            return (<div key={s} style={SF.timeSlot(type,isSel)} onClick={()=>onSelectTime(sl,el)}>{sl}</div>);
           })}
         </div>
       </div>
@@ -398,9 +399,7 @@ function TimeSlots({ dateKey, selected, durationMins, selectedTime, onSelectTime
   }
   return (
     <div>
-      {!slots.some(x=>x.av>0)
-        ?<div style={{textAlign:"center",padding:20,color:"#666",fontSize:13}}>😔 No available slots — please pick another date.</div>
-        :<><Group label="Morning" items={morning}/><Group label="Afternoon" items={afternoon}/></>}
+      <Group label="Morning" items={morning}/><Group label="Afternoon" items={afternoon}/>
     </div>
   );
 }
