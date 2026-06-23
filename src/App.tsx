@@ -539,9 +539,10 @@ export default function AllCleanBooking() {
         customer
       );
       setStep(5);
-    } catch(err) {
+    } catch(err: any) {
       console.error(err);
-      setPushError("Could not push to Google Calendar. Check permissions and try again.");
+      const detail = err?.message ? String(err.message) : "Unknown error";
+      setPushError(`Couldn't create booking: ${detail}`);
     } finally { setPushing(false); }
   }
 
