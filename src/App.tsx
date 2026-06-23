@@ -87,8 +87,6 @@ function SmoothSlider({ value, onChange }: { value: number; onChange: (v: number
   );
 }
 
-const GOOGLE_CLIENT_ID = "394844552614-sc48keuui9dbajl91p05u441khr4c4oh.apps.googleusercontent.com";
-
 const CALENDAR_IDS: Record<string, string> = {
   window:   "00cf8acbe00531495c5f06a58442f491f13b3297d6b96ffeec34a9cd7250f683@group.calendar.google.com",
   pressure: "b4186fd3ecb4b0e45ab431f5a7da61e2ff535becf046677864ca37c1917f0b02@group.calendar.google.com",
@@ -169,61 +167,16 @@ function allDurations(selected: Set<string>, windowPrice: number, pressurePrice:
   return [...set].sort((a,b)=>a-b);
 }
 
-let gapiReady = false;
-
-function loadGapiScript(): Promise<void> {
-  return new Promise(resolve => {
-    if ((window as any).gapi) return resolve();
-    const s = document.createElement("script");
-    s.src = "https://apis.google.com/js/api.js";
-    s.onload = () => resolve();
-    document.head.appendChild(s);
-  });
-}
-
-function loadGsiScript(): Promise<void> {
-  return new Promise(resolve => {
-    if ((window as any).google?.accounts) return resolve();
-    const s = document.createElement("script");
-    s.src = "https://accounts.google.com/gsi/client";
-    s.onload = () => resolve();
-    document.head.appendChild(s);
-  });
-}
-
-async function initGapi() {
-  if (gapiReady) return;
-  await loadGapiScript();
-  await new Promise<void>(resolve => (window as any).gapi.load("client", resolve));
-  await (window as any).gapi.client.init({
-    discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
-  });
-  gapiReady = true;
-}
-
-async function getAccessToken(): Promise<string> {
-  await loadGsiScript();
-  return new Promise((resolve, reject) => {
-    const client = (window as any).google.accounts.oauth2.initTokenClient({
-      client_id: GOOGLE_CLIENT_ID,
-      scope: "https://www.googleapis.com/auth/calendar.events",
-      callback: (resp: any) => { if(resp.error) reject(resp); else resolve(resp.access_token); },
-    });
-    // Use empty prompt so it skips the consent screen if already authorized
-    client.requestAccessToken({ prompt: "" });
-  });
-}
-
 interface BookingData {
   selected: Set<string>; date: Date; time: string; endTime: string;
   durationMins: number; customPrice: number; windowPrice: number; pressurePrice: number;
 }
 interface CustomerData { name: string; phone: string; email: string; address: string; salesRep: string; notes: string; }
 
+// Builds the calendar event and asks our own server (/api/create-booking) to create it.
+// The server holds the authorization (refresh token), so reps never need their own
+// Google sign-in or calendar permissions to push a booking — same pattern as availability.
 async function pushToGoogleCalendar(booking: BookingData, customer: CustomerData) {
-  await initGapi();
-  const token = await getAccessToken();
-  (window as any).gapi.client.setToken({ access_token: token });
   const pad = (n: number) => String(n).padStart(2,"0");
   const d = booking.date;
   function pt(str: string) {
@@ -247,11 +200,16 @@ async function pushToGoogleCalendar(booking: BookingData, customer: CustomerData
   };
   const calIds = new Set<string>();
   [...booking.selected].forEach(id => { if(CALENDAR_IDS[id]) calIds.add(CALENDAR_IDS[id]); });
-  const results = await Promise.allSettled(
-    [...calIds].map(calendarId => (window as any).gapi.client.calendar.events.insert({ calendarId, resource: event }))
-  );
-  const failed = results.filter((r: any) => r.status === "rejected");
-  if (failed.length > 0) throw new Error(`${failed.length} calendar(s) failed`);
+
+  const res = await fetch("/api/create-booking", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ calendarIds: [...calIds], event }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || `Booking push failed (${res.status})`);
+  }
 }
 
 // Fetches real events from Google Calendar for the given calendars/date range and
@@ -513,18 +471,6 @@ export default function AllCleanBooking() {
   const [customer,setCustomer]           = useState<CustomerData>({name:"",phone:"",email:"",address:"",salesRep:"",notes:""});
   const [pushing,setPushing]             = useState(false);
   const [pushError,setPushError]         = useState("");
-
-  useEffect(()=>{
-    // Pre-load Google scripts on mount so they're ready when user hits confirm
-    loadGapiScript().then(()=>{
-      (window as any).gapi.load("client", ()=>{
-        (window as any).gapi.client.init({
-          discoveryDocs:["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
-        }).then(()=>{ gapiReady=true; });
-      });
-    });
-    loadGsiScript();
-  },[]);
 
   // Lock the viewport so mobile browsers can't pinch/double-tap zoom the booking flow.
   useEffect(()=>{
@@ -791,7 +737,7 @@ export default function AllCleanBooking() {
         {pushError&&<div style={{background:"#fee2e2",border:"1px solid #fecaca",borderRadius:8,padding:"10px 14px",marginBottom:14,fontSize:12,color:"#991b1b"}}>{pushError}</div>}
         <div style={S.gcalNote}>
           <span style={{fontSize:18,flexShrink:0}}>📅</span>
-          <span>Confirming will sign you in to Google and push this booking directly to your AllClean calendars.</span>
+          <span>Confirming will push this booking directly to your AllClean calendars — no sign-in required.</span>
         </div>
         <button style={S.backBtn} onClick={()=>setStep(3)}>← Back</button>
         <button style={SF.ctaBtn(pushing)} disabled={pushing} onClick={handleConfirm}>
