@@ -662,11 +662,18 @@ export default function AllCleanBooking() {
         </div>
         <div style={{...S.sectionTitle,marginBottom:4}}>Job duration</div>
         <div style={{fontSize:12,color:"#666",marginBottom:8}}>
-          {selected.has("window")&&selected.has("pressure")
-            ?<span>Window <strong>${windowPrice}</strong> ({getPriceBracket(windowPrice).estLabel}) + Pressure <strong>${pressurePrice}</strong> ({getPriceBracket(pressurePrice).estLabel}) · combined</span>
-            :selected.has("window")?<span>Window Cleaning · <strong>${windowPrice}</strong> home · {getPriceBracket(windowPrice).estLabel} est.</span>
-            :selected.has("pressure")?<span>Pressure Washing · <strong>${pressurePrice}</strong> home · {getPriceBracket(pressurePrice).estLabel} est.</span>
-            :<span>Based on home value</span>}
+          {(()=>{
+            const hasW=selected.has("window"),hasP=selected.has("pressure"),hasG=selected.has("gutter");
+            const parts=[];
+            if(hasW) parts.push(`🪟 $${windowPrice} (${getPriceBracket(windowPrice).estLabel})`);
+            if(hasP) parts.push(`💦 $${pressurePrice} (${getPriceBracket(pressurePrice).estLabel})`);
+            if(hasG) parts.push(`🍂 $${gutterPrice} (${getPriceBracket(gutterPrice).estLabel})`);
+            if(parts.length>1) return <span>{parts.join(" + ")} · combined</span>;
+            if(hasW) return <span>Window Cleaning · <strong>${windowPrice}</strong> home · {getPriceBracket(windowPrice).estLabel} est.</span>;
+            if(hasP) return <span>Pressure Washing · <strong>${pressurePrice}</strong> home · {getPriceBracket(pressurePrice).estLabel} est.</span>;
+            if(hasG) return <span>Gutter Cleaning · <strong>${gutterPrice}</strong> home · {getPriceBracket(gutterPrice).estLabel} est.</span>;
+            return <span>Based on home value</span>;
+          })()}
         </div>
         <div style={{marginBottom:14,display:"flex",flexWrap:"wrap",justifyContent:"center",gap:6}}>
           {durations.length>0
