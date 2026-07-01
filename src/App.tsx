@@ -529,15 +529,17 @@ export default function AllCleanBooking() {
   useEffect(()=>{
     const hasW=selected.has("window"),hasP=selected.has("pressure"),hasG=selected.has("gutter");
     const hasClean=["clean1","clean2","clean4","accc"].some(id=>selected.has(id));
-    if(hasW||hasP||hasG){
-      let total=0;
-      if(hasW) total+=Math.max(...getPriceBracket(windowPrice).durations);
-      if(hasP) total+=Math.max(...getPriceBracket(pressurePrice).durations);
-      if(hasG) total+=Math.max(...getPriceBracket(gutterPrice).durations);
-      setDurationMins(Math.min(total,300));
-    } else if(hasClean){
-      setDurationMins(120);
+    if(!hasW&&!hasP&&!hasG){
+      if(hasClean) setDurationMins(120);
+      return;
     }
+    // Each service contributes its bracket's max duration — they add up.
+    // This keeps the highlighted pill in sync whenever any price slider moves.
+    let total=0;
+    if(hasW) total+=Math.max(...getPriceBracket(windowPrice).durations);
+    if(hasP) total+=Math.max(...getPriceBracket(pressurePrice).durations);
+    if(hasG) total+=Math.max(...getPriceBracket(gutterPrice).durations);
+    setDurationMins(Math.min(total,300));
   },[windowPrice,pressurePrice,gutterPrice,selected]);
 
   function toggleService(id: string){setSelected(prev=>{const n=new Set(prev);n.has(id)?n.delete(id):n.add(id);return n;});setTime(null);setEndTime(null);}
@@ -634,7 +636,8 @@ export default function AllCleanBooking() {
             {PRICE_DURATION_MAP.map(b=>{
               const activeW=selected.has("window")&&windowPrice>=b.min&&windowPrice<b.max;
               const activeP=selected.has("pressure")&&pressurePrice>=b.min&&pressurePrice<b.max;
-              const active=activeW||activeP;
+              const activeG=selected.has("gutter")&&gutterPrice>=b.min&&gutterPrice<b.max;
+              const active=activeW||activeP||activeG;
               return (
                 <div key={b.label} style={{textAlign:"center",padding:"4px 8px",borderRadius:6,background:active?BRAND_LIGHT:"transparent",border:active?`1px solid ${BRAND}`:"1px solid transparent"}}>
                   <div style={{fontWeight:700,fontSize:10,color:active?BRAND:"#666"}}>{b.label}</div>
