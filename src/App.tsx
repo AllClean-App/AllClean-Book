@@ -54,7 +54,7 @@ function SmoothSlider({ value, onChange }: { value: number; onChange: (v: number
   function getValueFromClientX(clientX: number) {
     const rect = trackRef.current!.getBoundingClientRect();
     const pct = Math.min(Math.max((clientX - rect.left) / rect.width, 0), 1);
-    const raw = 100 + pct * 400;
+    const raw = 100 + pct * 900;
     return Math.round(raw / 10) * 10;
   }
 
@@ -68,7 +68,7 @@ function SmoothSlider({ value, onChange }: { value: number; onChange: (v: number
     onChange(getValueFromClientX(e.clientX));
   }
 
-  const pct = ((value - 100) / 400) * 100;
+  const pct = ((value - 100) / 900) * 100;
 
   return (
     <div
@@ -90,6 +90,7 @@ function SmoothSlider({ value, onChange }: { value: number; onChange: (v: number
 const CALENDAR_IDS: Record<string, string> = {
   window:   "00cf8acbe00531495c5f06a58442f491f13b3297d6b96ffeec34a9cd7250f683@group.calendar.google.com",
   pressure: "b4186fd3ecb4b0e45ab431f5a7da61e2ff535becf046677864ca37c1917f0b02@group.calendar.google.com",
+  gutter:   "c520b50f8abd9a7249d4027e92466af3e1dc1c797a296adab325bfabfae3f145@group.calendar.google.com",
   clean1:   "7c032d849c7fbc0bfe9932c1f8eb854dbfab94f974e7a5fcf0249acbfad3c42a@group.calendar.google.com",
   clean2:   "7c032d849c7fbc0bfe9932c1f8eb854dbfab94f974e7a5fcf0249acbfad3c42a@group.calendar.google.com",
   clean4:   "7c032d849c7fbc0bfe9932c1f8eb854dbfab94f974e7a5fcf0249acbfad3c42a@group.calendar.google.com",
@@ -108,14 +109,24 @@ const DAY_START_MINS = 10 * 60;
 const DAY_END_MINS = 20 * 60;
 
 const PRICE_DURATION_MAP = [
-  { min: 100, max: 150, label: "$100–$150", durations: [30],                 estLabel: "~30 min" },
-  { min: 150, max: 200, label: "$150–$200", durations: [30, 60],             estLabel: "30 min – 1 hr" },
-  { min: 200, max: 250, label: "$200–$250", durations: [60, 90],             estLabel: "1 – 1.5 hrs" },
-  { min: 250, max: 300, label: "$250–$300", durations: [90, 120],            estLabel: "1.5 – 2 hrs" },
-  { min: 300, max: 350, label: "$300–$350", durations: [120, 150],           estLabel: "2 – 2.5 hrs" },
-  { min: 350, max: 400, label: "$350–$400", durations: [150, 180],           estLabel: "2.5 – 3 hrs" },
-  { min: 400, max: 450, label: "$400–$450", durations: [180, 210],           estLabel: "3 – 3.5 hrs" },
-  { min: 450, max: 501, label: "$450–$500", durations: [210, 240],           estLabel: "3.5 – 4 hrs" },
+  { min: 100,  max: 150,  label: "$100–$150",   durations: [30],       estLabel: "~30 min" },
+  { min: 150,  max: 200,  label: "$150–$200",   durations: [30, 60],   estLabel: "30 min – 1 hr" },
+  { min: 200,  max: 250,  label: "$200–$250",   durations: [60, 90],   estLabel: "1 – 1.5 hrs" },
+  { min: 250,  max: 300,  label: "$250–$300",   durations: [90, 120],  estLabel: "1.5 – 2 hrs" },
+  { min: 300,  max: 350,  label: "$300–$350",   durations: [120, 150], estLabel: "2 – 2.5 hrs" },
+  { min: 350,  max: 400,  label: "$350–$400",   durations: [150, 180], estLabel: "2.5 – 3 hrs" },
+  { min: 400,  max: 450,  label: "$400–$450",   durations: [180, 210], estLabel: "3 – 3.5 hrs" },
+  { min: 450,  max: 500,  label: "$450–$500",   durations: [210, 240], estLabel: "3.5 – 4 hrs" },
+  { min: 500,  max: 550,  label: "$500–$550",   durations: [240, 270], estLabel: "4 – 4.5 hrs" },
+  { min: 550,  max: 600,  label: "$550–$600",   durations: [270, 300], estLabel: "4.5 – 5 hrs" },
+  { min: 600,  max: 650,  label: "$600–$650",   durations: [300],      estLabel: "~5 hrs" },
+  { min: 650,  max: 700,  label: "$650–$700",   durations: [300],      estLabel: "~5 hrs" },
+  { min: 700,  max: 750,  label: "$700–$750",   durations: [300],      estLabel: "~5 hrs" },
+  { min: 750,  max: 800,  label: "$750–$800",   durations: [300],      estLabel: "~5 hrs" },
+  { min: 800,  max: 850,  label: "$800–$850",   durations: [300],      estLabel: "~5 hrs" },
+  { min: 850,  max: 900,  label: "$850–$900",   durations: [300],      estLabel: "~5 hrs" },
+  { min: 900,  max: 950,  label: "$900–$950",   durations: [300],      estLabel: "~5 hrs" },
+  { min: 950,  max: 1001, label: "$950–$1,000", durations: [300],      estLabel: "~5 hrs" },
 ];
 
 function getPriceBracket(price: number) {
@@ -130,6 +141,7 @@ interface ServiceDef {
 const SERVICES: Record<string, ServiceDef> = {
   window:  { name: "Window Cleaning",           category: "one-time",     contractors: 3, icon: "🪟", desc: "Interior & exterior, streak-free results", durRange: "30 min – 5 hrs", maxMins: 300 },
   pressure:{ name: "Pressure Washing",          category: "one-time",     contractors: 2, icon: "💦", desc: "Driveways, siding, patios & decks",        durRange: "30 min – 5 hrs", maxMins: 300 },
+  gutter:  { name: "Gutter Cleaning",           category: "one-time",     contractors: 2, icon: "🍂", desc: "Full gutter flush & downspout clear-out",   durRange: "30 min – 5 hrs", maxMins: 300 },
   clean1:  { name: "Monthly Cleaning",          category: "subscription", contractors: 2, icon: "🧹", desc: "1 clean/mo · 2 hrs per visit",             price: "$150/mo",  durations: [120] },
   clean2:  { name: "Bi-Weekly Cleaning",        category: "subscription", contractors: 2, icon: "🧹", desc: "2 cleans/mo · 2 hrs per visit",            price: "$250/mo",  durations: [120] },
   clean4:  { name: "Weekly Cleaning",           category: "subscription", contractors: 2, icon: "🧹", desc: "4 cleans/mo · 2 hrs per visit",            price: "$500/mo",  durations: [120] },
@@ -151,25 +163,30 @@ function getDurationsForService(id: string, customPrice: number): number[] {
   return getPriceBracket(customPrice).durations.filter(d => d <= (svc.maxMins||300));
 }
 
-function allDurations(selected: Set<string>, windowPrice: number, pressurePrice: number, customPrice: number): number[] {
-  const hasW=selected.has("window"), hasP=selected.has("pressure");
+function allDurations(selected: Set<string>, windowPrice: number, pressurePrice: number, gutterPrice: number): number[] {
+  const hasW=selected.has("window"), hasP=selected.has("pressure"), hasG=selected.has("gutter");
+  const set=new Set<number>();
   const wDurs=hasW?getPriceBracket(windowPrice).durations:[];
   const pDurs=hasP?getPriceBracket(pressurePrice).durations:[];
-  const set=new Set<number>();
-  if(hasW&&hasP){
-    wDurs.forEach(d1=>pDurs.forEach(d2=>{ const t=Math.round((d1+d2)/30)*30; if(t<=300&&t>0) set.add(t); }));
-  } else {
-    wDurs.forEach(d=>{ const s=Math.round(d/30)*30; if(s<=300&&s>0) set.add(s); });
-    pDurs.forEach(d=>{ const s=Math.round(d/30)*30; if(s<=300&&s>0) set.add(s); });
+  const gDurs=hasG?getPriceBracket(gutterPrice).durations:[];
+  // combine all one-time durations additively
+  const oneTimeCombos: number[] = [];
+  if(!hasW&&!hasP&&!hasG) { /* none */ }
+  else {
+    const bases = [hasW?wDurs:[0], hasP?pDurs:[0], hasG?gDurs:[0]];
+    for(const a of bases[0]) for(const b of bases[1]) for(const c of bases[2]){
+      const t=Math.round((a+b+c)/30)*30; if(t<=300&&t>0) oneTimeCombos.push(t);
+    }
   }
-  [...selected].filter(id=>id!=="window"&&id!=="pressure")
-    .forEach(id=>getDurationsForService(id,customPrice).forEach(d=>{ const s=Math.round(d/30)*30; if(s<=300&&s>0) set.add(s); }));
+  oneTimeCombos.forEach(d=>set.add(d));
+  [...selected].filter(id=>!["window","pressure","gutter"].includes(id))
+    .forEach(id=>{ const svc=SERVICES[id]; if(svc.durations) svc.durations.forEach(d=>{const s=Math.round(d/30)*30;if(s<=300&&s>0)set.add(s);}); });
   return [...set].sort((a,b)=>a-b);
 }
 
 interface BookingData {
   selected: Set<string>; date: Date; time: string; endTime: string;
-  durationMins: number; customPrice: number; windowPrice: number; pressurePrice: number;
+  durationMins: number; customPrice: number; windowPrice: number; pressurePrice: number; gutterPrice: number;
 }
 interface CustomerData { name: string; phone: string; email: string; address: string; salesRep: string; notes: string; }
 
@@ -189,7 +206,8 @@ async function pushToGoogleCalendar(booking: BookingData, customer: CustomerData
   let totalPrice=0;
   if(booking.selected.has("window")) totalPrice+=booking.windowPrice||200;
   if(booking.selected.has("pressure")) totalPrice+=booking.pressurePrice||200;
-  [...booking.selected].filter(id=>!["window","pressure"].includes(id)).forEach(id=>{totalPrice+=subPrices[id]||0;});
+  if(booking.selected.has("gutter")) totalPrice+=booking.gutterPrice||200;
+  [...booking.selected].filter(id=>!["window","pressure","gutter"].includes(id)).forEach(id=>{totalPrice+=subPrices[id]||0;});
   const serviceNames=[...booking.selected].map(id=>SERVICES[id]?.name).join(", ");
   const event = {
     summary: customer.name,
@@ -457,6 +475,7 @@ export default function AllCleanBooking() {
   const [customPrice]                    = useState(200);
   const [windowPrice,setWindowPrice]     = useState(200);
   const [pressurePrice,setPressurePrice] = useState(200);
+  const [gutterPrice,setGutterPrice]     = useState(200);
   const [durationMins,setDurationMins]   = useState(60);
   const [date,setDate]                   = useState<Date|null>(null);
   const [dateKey,setDateKey]             = useState("");
@@ -508,25 +527,23 @@ export default function AllCleanBooking() {
   },[step,selected,calDate]);
 
   useEffect(()=>{
-    const hasW=selected.has("window"),hasP=selected.has("pressure");
+    const hasW=selected.has("window"),hasP=selected.has("pressure"),hasG=selected.has("gutter");
     const hasClean=["clean1","clean2","clean4","accc"].some(id=>selected.has(id));
-    if(hasW&&hasP){
-      const wMax=Math.max(...getPriceBracket(windowPrice).durations);
-      const pMax=Math.max(...getPriceBracket(pressurePrice).durations);
-      setDurationMins(Math.min(wMax+pMax,300));
-    } else if(hasW){
-      setDurationMins(Math.min(Math.max(...getPriceBracket(windowPrice).durations),300));
-    } else if(hasP){
-      setDurationMins(Math.min(Math.max(...getPriceBracket(pressurePrice).durations),300));
-    } else if(hasClean&&!hasW&&!hasP){
+    if(hasW||hasP||hasG){
+      let total=0;
+      if(hasW) total+=Math.max(...getPriceBracket(windowPrice).durations);
+      if(hasP) total+=Math.max(...getPriceBracket(pressurePrice).durations);
+      if(hasG) total+=Math.max(...getPriceBracket(gutterPrice).durations);
+      setDurationMins(Math.min(total,300));
+    } else if(hasClean){
       setDurationMins(120);
     }
-  },[windowPrice,pressurePrice,selected]);
+  },[windowPrice,pressurePrice,gutterPrice,selected]);
 
   function toggleService(id: string){setSelected(prev=>{const n=new Set(prev);n.has(id)?n.delete(id):n.add(id);return n;});setTime(null);setEndTime(null);}
   function handleSelectDate(dt: Date,dk: string){setDate(dt);setDateKey(dk);setTime(null);setEndTime(null);setDateStr(dt.toLocaleDateString("en-CA",{weekday:"short",month:"short",day:"numeric"}));}
 
-  const durations=allDurations(selected,windowPrice,pressurePrice,customPrice);
+  const durations=allDurations(selected,windowPrice,pressurePrice,gutterPrice);
   const step2Ready=date&&time;
   const step3Ready=!!(customer.name&&customer.phone&&customer.address&&customer.salesRep);
 
@@ -534,7 +551,7 @@ export default function AllCleanBooking() {
     setPushing(true); setPushError("");
     try {
       await pushToGoogleCalendar(
-        {selected,date:date!,time:time!,endTime:endTime!,durationMins,customPrice,windowPrice,pressurePrice},
+        {selected,date:date!,time:time!,endTime:endTime!,durationMins,customPrice,windowPrice,pressurePrice,gutterPrice},
         customer
       );
       setStep(5);
@@ -549,6 +566,7 @@ export default function AllCleanBooking() {
     setStep(1);setSelected(new Set());setWindowPrice(200);setPressurePrice(200);
     setDurationMins(60);setDate(null);setDateKey("");setTime(null);setEndTime(null);
     setCustomer({name:"",phone:"",email:"",address:"",salesRep:"",notes:""});setPushError("");
+    setGutterPrice(200);
     setCalDate(()=>{const d=new Date();d.setDate(1);return d;});
     setBusyMap({});setGcalError("");setGcalLoaded(false);
   }
@@ -559,7 +577,7 @@ export default function AllCleanBooking() {
         <div style={S.sectionTitle}>Select services</div>
         <div style={S.sectionSub}>Pick one or more — tap to select</div>
         <div style={S.catLabel}>One-time services</div>
-        {["window","pressure"].map(id=><ServiceCard key={id} id={id} selected={selected.has(id)} onToggle={toggleService}/>)}
+        {["window","pressure","gutter"].map(id=><ServiceCard key={id} id={id} selected={selected.has(id)} onToggle={toggleService}/>)}
         <div style={S.divider}/>
         <div style={S.catLabel}>Home Cleaning — subscription packages</div>
         {["clean1","clean2","clean4"].map(id=><ServiceCard key={id} id={id} selected={selected.has(id)} onToggle={toggleService}/>)}
@@ -578,7 +596,7 @@ export default function AllCleanBooking() {
             </div>
             <SmoothSlider value={windowPrice} onChange={setWindowPrice}/>
             <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"#aaa",marginTop:2}}>
-              <span>$100</span><span style={{color:BRAND_DARK,fontWeight:600}}>{getPriceBracket(windowPrice).estLabel} est.</span><span>$500</span>
+              <span>$100</span><span style={{color:BRAND_DARK,fontWeight:600}}>{getPriceBracket(windowPrice).estLabel} est.</span><span>$1,000</span>
             </div>
           </div>
         )}
@@ -591,12 +609,25 @@ export default function AllCleanBooking() {
             </div>
             <SmoothSlider value={pressurePrice} onChange={setPressurePrice}/>
             <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"#aaa",marginTop:2}}>
-              <span>$100</span><span style={{color:BRAND_DARK,fontWeight:600}}>{getPriceBracket(pressurePrice).estLabel} est.</span><span>$500</span>
+              <span>$100</span><span style={{color:BRAND_DARK,fontWeight:600}}>{getPriceBracket(pressurePrice).estLabel} est.</span><span>$1,000</span>
             </div>
           </div>
         )}
-        {!selected.has("window")&&!selected.has("pressure")&&(
-          <div style={{fontSize:12,color:"#aaa",marginBottom:14}}>Select Window Cleaning or Pressure Washing above to set pricing.</div>
+        {selected.has("gutter")&&(
+          <div style={{marginBottom:14}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
+              <span style={{fontSize:13}}>🍂</span>
+              <span style={{fontSize:13,fontWeight:700}}>Gutter Cleaning</span>
+              <span style={{marginLeft:"auto",fontSize:18,fontWeight:700,color:BRAND}}>${gutterPrice}</span>
+            </div>
+            <SmoothSlider value={gutterPrice} onChange={setGutterPrice}/>
+            <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"#aaa",marginTop:2}}>
+              <span>$100</span><span style={{color:BRAND_DARK,fontWeight:600}}>{getPriceBracket(gutterPrice).estLabel} est.</span><span>$1,000</span>
+            </div>
+          </div>
+        )}
+        {!selected.has("window")&&!selected.has("pressure")&&!selected.has("gutter")&&(
+          <div style={{fontSize:12,color:"#aaa",marginBottom:14}}>Select Window Cleaning, Pressure Washing, or Gutter Cleaning above to set pricing.</div>
         )}
         <div style={{background:"#f5f7fa",borderRadius:8,padding:"10px 14px",marginBottom:14}}>
           <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:4}}>
@@ -681,18 +712,20 @@ export default function AllCleanBooking() {
 
   function Step4(){
     const names=[...selected].map(id=>SERVICES[id]?.name).join(", ");
-    const hasWindow=selected.has("window"),hasPressure=selected.has("pressure");
-    const wBracket=getPriceBracket(windowPrice),pBracket=getPriceBracket(pressurePrice);
+    const hasWindow=selected.has("window"),hasPressure=selected.has("pressure"),hasGutter=selected.has("gutter");
+    const wBracket=getPriceBracket(windowPrice),pBracket=getPriceBracket(pressurePrice),gBracket=getPriceBracket(gutterPrice);
     const subPrices: Record<string,number>={clean1:150,clean2:250,clean4:500,accc:1000};
     let totalPrice=0;
     if(hasWindow) totalPrice+=windowPrice;
     if(hasPressure) totalPrice+=pressurePrice;
-    [...selected].filter(id=>!["window","pressure"].includes(id)).forEach(id=>{totalPrice+=subPrices[id]||0;});
+    if(hasGutter) totalPrice+=gutterPrice;
+    [...selected].filter(id=>!["window","pressure","gutter"].includes(id)).forEach(id=>{totalPrice+=subPrices[id]||0;});
     const selectedDurLabel=(()=>{
-      if(hasWindow&&hasPressure){
-        const wMax=Math.max(...wBracket.durations),pMax=Math.max(...pBracket.durations);
-        return `${fmtDur(wMax)} (window) + ${fmtDur(pMax)} (pressure) = ${fmtDur(Math.min(wMax+pMax,300))}`;
-      }
+      const parts=[];
+      if(hasWindow) parts.push(`${fmtDur(Math.max(...wBracket.durations))} (window)`);
+      if(hasPressure) parts.push(`${fmtDur(Math.max(...pBracket.durations))} (pressure)`);
+      if(hasGutter) parts.push(`${fmtDur(Math.max(...gBracket.durations))} (gutter)`);
+      if(parts.length>1) return parts.join(' + ') + ` = ${fmtDur(durationMins)}`;
       return fmtDur(durationMins);
     })();
     const calendarsList=(()=>{
@@ -700,13 +733,22 @@ export default function AllCleanBooking() {
       [...selected].forEach(id=>{
         if(id==="window") ids.add("Window Cleaning");
         else if(id==="pressure") ids.add("Pressure Washing");
+        else if(id==="gutter") ids.add("Gutter Cleaning");
         else ids.add("Home Cleaning");
       });
       return [...ids].join(", ");
     })();
+    const homeValRow: [string,string][] = [];
+    if(hasWindow&&hasPressure&&hasGutter) homeValRow.push(["Home values",`🪟 $${windowPrice} · 💦 $${pressurePrice} · 🍂 $${gutterPrice}`]);
+    else if(hasWindow&&hasPressure) homeValRow.push(["Home values",`🪟 $${windowPrice} · 💦 $${pressurePrice}`]);
+    else if(hasWindow&&hasGutter) homeValRow.push(["Home values",`🪟 $${windowPrice} · 🍂 $${gutterPrice}`]);
+    else if(hasPressure&&hasGutter) homeValRow.push(["Home values",`💦 $${pressurePrice} · 🍂 $${gutterPrice}`]);
+    else if(hasWindow) homeValRow.push(["Home value",`$${windowPrice} (${wBracket.label})`]);
+    else if(hasPressure) homeValRow.push(["Home value",`$${pressurePrice} (${pBracket.label})`]);
+    else if(hasGutter) homeValRow.push(["Home value",`$${gutterPrice} (${gBracket.label})`]);
     const rows: [string,string][]=[
       ["Services",names],
-      ...(hasWindow&&hasPressure?[["Home values",`🪟 $${windowPrice} · 💦 $${pressurePrice}`] as [string,string]]:hasWindow?[["Home value",`$${windowPrice} (${wBracket.label})`] as [string,string]]:hasPressure?[["Home value",`$${pressurePrice} (${pBracket.label})`] as [string,string]]:[]),
+      ...homeValRow,
       ["Selected duration",selectedDurLabel],
       ["Date",dateStr],
       ["Start",time||""],
@@ -754,6 +796,7 @@ export default function AllCleanBooking() {
       [...selected].forEach(id=>{
         if(id==="window") ids.add("Window Cleaning");
         else if(id==="pressure") ids.add("Pressure Washing");
+        else if(id==="gutter") ids.add("Gutter Cleaning");
         else ids.add("Home Cleaning");
       });
       return [...ids].join(" · ");
