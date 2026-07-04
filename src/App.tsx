@@ -375,12 +375,12 @@ function CalendarPicker({ selected, durationMins, selectedDate, onSelectDate, gc
         {DAY_LABELS.map(d=><div key={d} style={{textAlign:"center",fontSize:10,fontWeight:700,color:"#666",padding:"6px 0"}}>{d}</div>)}
         {Array.from({length:firstDay}).map((_,i)=><div key={`e${i}`}/>)}
         {Array.from({length:lastDay}).map((_,i)=>{
-          const day=i+1,dt=new Date(y,m,day),isPast=dt<today,isSun=dt.getDay()===0;
+          const day=i+1,dt=new Date(y,m,day),isPast=dt<today;
           const dk=toDateKey(dt),isSel=selectedDate&&dt.toDateString()===selectedDate.toDateString(),isTd=dt.toDateString()===today.toDateString();
-          const dot=!isPast&&!isSun?dotColor(dk):null;
+          const dot=!isPast?dotColor(dk):null;
           return (
-            <div key={day} onClick={()=>!isPast&&!isSun&&onSelectDate(dt,dk)}
-              style={{textAlign:"center",padding:"6px 2px",fontSize:12,borderRadius:7,cursor:isPast||isSun?"default":"pointer",background:isSel?BRAND:"transparent",color:isSel?"#fff":isPast||isSun?"#ccc":isTd?BRAND:"#1a1a1a",fontWeight:isSel||isTd?700:400}}>
+            <div key={day} onClick={()=>!isPast&&onSelectDate(dt,dk)}
+              style={{textAlign:"center",padding:"6px 2px",fontSize:12,borderRadius:7,cursor:isPast?"default":"pointer",background:isSel?BRAND:"transparent",color:isSel?"#fff":isPast?"#ccc":isTd?BRAND:"#1a1a1a",fontWeight:isSel||isTd?700:400}}>
               {day}
               {dot&&<div style={{width:5,height:5,borderRadius:"50%",background:dot,margin:"1px auto 0"}}/>}
             </div>
